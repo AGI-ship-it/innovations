@@ -286,6 +286,39 @@
     }
   }, true);
   const familyMap = window.createFamilyMap(byId('family-map'), chooseFamily);
+  // Home page side list: every family, grouped under Service and Internal; clicking one opens it.
+  function buildFamilyIndex() {
+    const host = byId('family-index');
+    host.replaceChildren(...['service', 'internal'].map(collection => {
+      const group = el('section', 'family-index-group'); group.dataset.collection = collection;
+      const items = families.filter(item => item.collection === collection).sort((a, b) => b.records.length - a.records.length || a.label.localeCompare(b.label));
+      const total = records.filter(record => record.collection === collection).length;
+      const head = el('h3', 'family-index-head'); head.append(el('span', '', `${collection === 'internal' ? 'Internal' : 'Service'} families`), el('small', '', String(items.length)));
+      const list = el('ul', 'family-index-list');
+      items.forEach(family => {
+        const button = el('button', 'family-index-item'); button.type = 'button'; button.dataset.familyLink = family.id;
+        button.setAttribute('aria-label', `${family.label}, ${family.records.length} ${family.records.length === 1 ? 'use case' : 'use cases'}, ${collection}`);
+        button.append(el('span', 'family-index-name', family.label), el('span', 'family-index-count', String(family.records.length)));
+        button.addEventListener('click', () => { state.collection = family.collection; chooseFamily(family, null); });
+        // Hovering a pill lights up its planet in the galaxy.
+        const planet = () => [...document.querySelectorAll('#family-map [data-family]')].find(node => node.dataset.family === family.id);
+        ['pointerenter', 'focus'].forEach(type => button.addEventListener(type, () => planet()?.classList.add('is-linked')));
+        ['pointerleave', 'blur'].forEach(type => button.addEventListener(type, () => planet()?.classList.remove('is-linked')));
+        const item = el('li'); item.append(button); list.append(item);
+      });
+      // Leading "All families" pill marks the current home view, like "All maturities".
+      const all = el('button', 'family-index-item is-all'); all.type = 'button'; all.setAttribute('aria-pressed', 'true');
+      all.append(el('span', 'family-index-name', 'All families'), el('span', 'family-index-count', String(items.length)));
+      const allItem = el('li'); allItem.append(all); list.prepend(allItem);
+      head.classList.add('sr-only');
+      group.append(head, list);
+      return group;
+    }));
+  }
+  buildFamilyIndex();
+  // Vertical wheel scrolls the family row sideways.
+  document.querySelector('.maturity-navigation').addEventListener('wheel', event => { const row = event.currentTarget; if (row.scrollWidth <= row.clientWidth || Math.abs(event.deltaX) > Math.abs(event.deltaY)) return; row.scrollLeft += event.deltaY; event.preventDefault(); }, { passive: false });
+  byId('family-index').addEventListener('wheel', event => { const row = event.target.closest('.family-index-group'); if (!row || row.scrollWidth <= row.clientWidth || Math.abs(event.deltaX) > Math.abs(event.deltaY)) return; row.scrollLeft += event.deltaY; event.preventDefault(); }, { passive: false });
   serviceGroups.forEach(group => {
     const option = el('option', '', groupName(group)); option.value = group.id;
     byId('service-filter').append(option);
@@ -354,6 +387,7 @@
       if (stamp !== overviewStamp) { familyMap.render(shown, state.collection); overviewStamp = stamp; }
       const summary = `${shown.length} families, one planet each. Select a planet to explore its use cases by maturity.`;
       text('family-summary', summary);
+      document.querySelectorAll('.family-index-group').forEach(group => group.classList.toggle('is-current', group.dataset.collection === state.collection));
       const info = byId('collection-info'); info.dataset.tooltip = summary; info.setAttribute('aria-label', summary);
     }
   }
