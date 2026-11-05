@@ -213,11 +213,11 @@
     const map = createMap(container, (record, button) => onCase(record.id, button), { caseMode: true, centreLabel });
     map.render(records, records[0]?.collection);
     const references = element('details', 'case-map-references');
-    references.append(setIconLabel(element('summary', 'redirect-link'), 'Workbook references', 'external-link'));
+    references.append(setIconLabel(element('summary', 'redirect-link'), 'Source links', 'external-link'));
     const content = element('div', 'case-map-reference-content');
-    records.forEach(record => {
+    records.filter(record => (record.sourceLinks || []).length).forEach(record => {
       const entry = element('section', 'source-entry');
-      entry.append(element('h4', '', record.title), element('p', '', `${record.provenance.sheet} · row ${record.sourceRow}. ${record.sourcesText || ''}`));
+      entry.append(element('h4', '', record.title));
       (record.sourceLinks || []).forEach(value => {
         try {
           const url = new URL(value);
@@ -231,7 +231,7 @@
     // Lives in the footer, just before Source notes; removed again when the family view closes.
     document.querySelectorAll('.page-footer .case-map-references').forEach(node => node.remove());
     const sourceNotes = document.getElementById('source-notes-open');
-    if (sourceNotes) sourceNotes.before(references); else container.append(references);
+    if (content.children.length) { if (sourceNotes) sourceNotes.before(references); else container.append(references); }
     return { render(state) { map.highlight(state.maturity, state.selectedId); }, destroy() { references.remove(); map.destroy(); } };
   };
 })();

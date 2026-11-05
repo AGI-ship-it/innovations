@@ -205,9 +205,10 @@
       back.addEventListener('click', onReset);
       const count = htmlNode('span', 'focus-count', `${group.records.length} ${group.records.length === 1 ? 'use case' : 'use cases'}`);
       const links = group.records.reduce((total, record) => total + sourceLinks(record).length, 0);
-      const sourceLabel = links ? `Source links (${links})` : 'Workbook references';
+      const sourceLabel = `Source links (${links})`;
       const sourceToggle = setIconLabel(htmlNode('button', 'focus-source-toggle redirect-link'), sourceLabel, 'external-link');
       sourceToggle.setAttribute('aria-expanded', 'false');
+      sourceToggle.hidden = !links;
       toolbar.append(back, count, sourceToggle);
       const orbits = htmlNode('div', 'focus-orbits');
       orbits.append(svgNode('svg', { class: 'named-orbit-paths', 'aria-hidden': 'true' }));
@@ -229,7 +230,7 @@
         namedButtons.set(record.id, button);
       });
       const sources = htmlNode('div', 'focus-sources'); sources.hidden = true;
-      const sourceTitle = htmlNode('h3', '', `${domain} workbook references`);
+      const sourceTitle = htmlNode('h3', '', `${domain} source links`);
       sources.append(sourceTitle);
       group.records.forEach(record => {
         const entry = htmlNode('section', 'source-entry');
@@ -240,7 +241,6 @@
           link.href = url.href; link.target = '_blank'; link.rel = 'noopener noreferrer';
           entry.append(link);
         });
-        if (!urls.length) entry.append(htmlNode('p', '', `${record.provenance.sheet} · row ${record.sourceRow}. ${record.sourcesText || 'No source link recorded in the workbook.'}`));
         sources.append(entry);
       });
       sourceToggle.addEventListener('click', () => {

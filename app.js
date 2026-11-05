@@ -8,7 +8,7 @@
     if (value !== undefined && value !== null) node.textContent = String(value);
     return node;
   };
-  const text = (id, value) => { byId(id).textContent = value === null || value === undefined || value === '' ? 'Not recorded in the workbook.' : String(value); };
+  const text = (id, value) => { byId(id).textContent = value === null || value === undefined || value === '' ? 'Not recorded.' : String(value); };
   if (!data || !Array.isArray(data.useCases) || !data.useCases.length || !Array.isArray(data.serviceGroups)
     || typeof window.createFamilyCaseMap !== 'function' || typeof window.createFamilyMap !== 'function' || !window.FamilyAtlas || typeof window.createSolarSystem !== 'function' || typeof window.AtlasOrbits?.positions !== 'function') {
     byId('solar-system').textContent = 'The solar system could not be loaded. Reload the page or check that all website files are together.';
@@ -40,7 +40,7 @@
   reducedMotion.addEventListener('change', () => { if (reducedMotion.matches) { starsPaused = true; document.getAnimations().forEach(animation => animation.cancel()); } updateStarMotion(); });
   updateStarMotion();
   const records = data.useCases;
-  // Display titles use an ampersand for “and” (source workbook text elsewhere is unchanged).
+  // Display titles use an ampersand for “and” (source text elsewhere is unchanged).
   records.forEach(record => { record.title = record.title.replace(/\s+and\s+/gi, ' & '); });
   const domains = [...new Set(records.map(record => record.domain))].sort((a, b) => a.localeCompare(b));
   const serviceGroups = data.serviceGroups;
@@ -298,7 +298,7 @@
     });
   });
   domains.forEach(domain => { const option = el('option', '', domain); option.value = domain; byId('domain-filter').append(option); });
-  text('about-source', `Source: ${data.source.fileName}. Imported on 26 October 2026. Scope: internal and service use-case prioritisation. The original workbook is unchanged.`);
+  text('about-source', 'Source: Al Ghurair internal and service use-case prioritisation research, October 2026.');
   function caseRow(record, context, showDomain = false) {
     const button = el('button', 'case-row');
     button.dataset.id = record.id;
@@ -348,7 +348,7 @@
       solar.render({ ...state });
       text('active-stage', family.domain);
       text('stage-summary', `${family.records.length} named ${family.records.length === 1 ? 'use case' : 'use cases'}`);
-      text('scene-instruction', 'Select a named use case to read its description, value and workbook context.');
+      text('scene-instruction', 'Select a named use case to read its description, scores and value.');
     } else {
       const stamp = state.collection;
       if (stamp !== overviewStamp) { familyMap.render(shown, state.collection); overviewStamp = stamp; }
@@ -456,15 +456,24 @@
     const steps = [...description.querySelectorAll(':scope > .cx-step')];
     if (steps.length) { steps[0].before(timeline); timeline.append(...steps); }
     if (results) {
-      const grid = el('div', 'cx-results');
+      // Visual pair: Challenge (why it is needed) → Outcome (the output). Lead-in phrases are trimmed for display only.
+      const tidy = textPart => { const t = textPart.trim(); return t.charAt(0).toUpperCase() + t.slice(1); };
+      let outcome = '', challenge = '';
       results.split(/(?=It is needed because )/).filter(Boolean).forEach(part => {
-        const why = part.startsWith('It is needed because ');
-        const label = why ? 'Why it is needed' : 'Output';
-        const block = el('div', `cx-result${why ? ' is-why' : ''}`); block.setAttribute('role', 'group'); block.setAttribute('aria-label', label);
-        const head = el('div', 'cx-result-head'); head.append(icon(why ? 'shield-alert' : 'target'), el('strong', '', label));
-        block.append(head, el('p', '', part.trim()));
-        grid.append(block);
+        if (part.startsWith('It is needed because ')) challenge = tidy(part.replace(/^It is needed because /, ''));
+        else outcome = tidy(part.replace(/^The outputs? (?:is|are) /, ''));
       });
+      const grid = el('div', 'cx-results cx-flow');
+      const card = (kind, label, iconName, body) => {
+        const block = el('div', `cx-result is-${kind}`); block.setAttribute('role', 'group'); block.setAttribute('aria-label', label);
+        const badge = el('span', 'cx-result-badge'); badge.setAttribute('aria-hidden', 'true'); badge.append(icon(iconName));
+        const head = el('div', 'cx-result-head'); head.append(badge, el('strong', '', label));
+        block.append(head, el('p', '', body));
+        return block;
+      };
+      if (challenge) grid.append(card('why', 'Challenge', 'triangle-alert', challenge));
+      if (challenge && outcome) { const arrow = el('span', 'cx-flow-arrow'); arrow.setAttribute('aria-hidden', 'true'); arrow.append(icon('arrow-right')); grid.append(arrow); }
+      if (outcome) grid.append(card('out', 'Outcome', 'circle-check-big', outcome));
       description.append(grid);
     }
     text('detail-value', record.value);
@@ -515,7 +524,7 @@
       const band = scored ? bandOf(fraction) : null;
       const card = tile(label, scored ? score(raw) : '–', scored ? maximum : '', band, gauge(fraction, band),
         scored ? `${label}: ${score(raw)} out of ${maximum}, ${bandText[band]}` : `${label}: not scored`,
-        scored ? `${hint}. ${bandText[band]}: ${bandRule}.` : 'Not scored in the workbook');
+        scored ? `${hint}. ${bandText[band]}: ${bandRule}.` : 'Not scored');
       if (!scored) card.dataset.unscored = 'true';
       return card;
     };
@@ -537,14 +546,14 @@
     rank.replaceChildren(...(record.maturity ? [el('span', 'cx-rank-stage', record.maturity), el('span', 'cx-rank-dot')] : []), el('span', 'cx-rank-label', 'Rank'), el('strong', '', rankScored ? `#${score(priority.rank)}` : '–'), el('span', 'cx-rank-of', rankScored ? `of ${collectionSize}` : 'not ranked'));
     rank.setAttribute('aria-label', (record.maturity ? `${record.maturity} maturity. ` : '') + (rankScored ? `Rank ${score(priority.rank)} of ${collectionSize} ${record.collection} cases` : 'Not ranked'));
     byId('detail-score-tags').replaceChildren(...tiles);
-    // Maturity chip carries a 4-segment meter of the workbook maturity score.
+    // Maturity chip carries a 4-segment meter of the maturity score.
     const maturityChip = byId('detail-maturity');
     const meter = el('span', 'cx-meter'); meter.setAttribute('aria-hidden', 'true');
     for (let level = 1; level <= 4; level++) meter.append(el('i', level <= (record.maturityScore || 0) ? 'is-on' : ''));
     maturityChip.replaceChildren(meter, document.createTextNode(record.maturity));
     maturityChip.setAttribute('aria-label', `Maturity: ${record.maturity}, score ${record.maturityScore} of 4`);
     byId('detail-service-group').hidden = !record.rawServiceGroup;
-    text('score-guide-text', 'Each gauge fills in proportion to the score as a percentage of its maximum, and every tile uses the same colour rule: Low (grey-red) below 25%, Moderate (orange) 25% to below 50%, Strong (green) 50% or above. Maturity is out of 4. Viability and Feasibility are out of 4; Priority is their product, out of 16. These display bands summarise the existing scores; they are not workbook recommendations. Rank is the workbook’s ordering within its collection: 1 is highest.');
+    text('score-guide-text', 'Each gauge fills in proportion to the score as a percentage of its maximum, and every tile uses the same colour rule: Low (grey-red) below 25%, Moderate (orange) 25% to below 50%, Strong (green) 50% or above. Maturity is out of 4. Viability and Feasibility are out of 4; Priority is their product, out of 16. These display bands summarise the existing scores; they are not recommendations. Rank is the research ordering within its collection: 1 is highest.');
     const index = filtered.findIndex(item => item.id === id);
     text('detail-index', index >= 0 ? `${index + 1} / ${filtered.length}` : '–');
     byId('case-prev').disabled = index <= 0;
@@ -565,8 +574,8 @@
     stopNavigationZoom();
     const animate = !starsPaused && !reducedMotion.matches;
     if (!wasOpen) {
-      // First open: the panel slides in from the right.
-      if (animate) inspector.animate([{ transform: 'translateX(100%)' }, { transform: 'translateX(0)' }], { duration: 380, easing: 'cubic-bezier(.16,1,.3,1)' });
+      // First open: the floating panel glides in, scaling up and un-blurring.
+      if (animate) inspector.animate([{ opacity: 0, transform: 'translateX(56px) scale(.96)', filter: 'blur(6px)' }, { opacity: 1, transform: 'none', filter: 'blur(0)' }], { duration: 480, easing: 'cubic-bezier(.16,1,.3,1)' });
     } else if (animate) {
       // Next / previous: the panel stays put; only its content flips across.
       const shift = (direction || 1) * 28;
