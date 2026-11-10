@@ -311,7 +311,7 @@
         || container.querySelector('button:hover, button:focus, details[open]');
       if (layout && !paused) {
         speed += (1 - speed) * (1 - Math.exp(-elapsed / .65));
-        layout.nodes = advance(layout, elapsed * speed); position();
+        layout.nodes = advance(layout, elapsed * speed * (universe ? 3 : 1)); position();
       } else speed = 0;
       frame = requestAnimationFrame(animate);
     }

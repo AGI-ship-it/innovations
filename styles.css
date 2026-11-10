@@ -2809,3 +2809,48 @@ html[dir="rtl"] .card-planet-orb::after { transform: scaleX(-1); }
 .lang-option:hover:not([aria-pressed="true"]) { color: #fff; }
 .lang-option:focus-visible { outline: 2px solid var(--page-primary-button); outline-offset: 1px; }
 @media (prefers-reduced-motion: reduce) { .lang-switch::before { transition: none; } }
+
+/* ===== AGI globe: a moving pearl ===== */
+@property --pearl-angle { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+@property --pearl-x { syntax: '<percentage>'; inherits: false; initial-value: 30%; }
+.universe-map .service-sun:not(.area-sun) { overflow: hidden; isolation: isolate;
+  background: radial-gradient(circle at 38% 32%, #ffffff 0%, #fbf8ff 38%, #efe8f8 70%, #ddd2ee 100%); }
+/* Iridescent film that swirls around the pearl */
+.universe-map .service-sun:not(.area-sun)::before { content: ''; position: absolute; inset: -10%; border-radius: 50%; z-index: 0; pointer-events: none;
+  background: conic-gradient(from var(--pearl-angle), #ffd1ec, #e3d4ff, #cfe6ff, #d6fbef, #fff1d1, #ffd1ec);
+  filter: blur(14px) saturate(1.2); opacity: .7; mix-blend-mode: multiply;
+  -webkit-mask: radial-gradient(circle, transparent 18%, #000 62%); mask: radial-gradient(circle, transparent 18%, #000 62%);
+  animation: pearl-swirl 14s linear infinite; }
+/* Soft moving highlight and a gentle edge shade for depth */
+.universe-map .service-sun:not(.area-sun)::after { content: ''; display: block !important; position: absolute; inset: 0; border-radius: 50%; z-index: 0; pointer-events: none;
+  background: radial-gradient(circle at var(--pearl-x) 26%, #ffffffe6 0%, #ffffff66 16%, transparent 40%),
+    radial-gradient(circle at 50% 50%, transparent 62%, #b9a6d633 86%, #8f78b24d 100%);
+  animation: pearl-sheen 9s ease-in-out infinite alternate; }
+.universe-map .service-sun:not(.area-sun) .sun-mark { position: relative; z-index: 1; }
+@keyframes pearl-swirl { to { --pearl-angle: 360deg; } }
+@keyframes pearl-sheen { from { --pearl-x: 26%; } to { --pearl-x: 62%; } }
+.stars-paused .universe-map .service-sun::before, .stars-paused .universe-map .service-sun::after { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) { .universe-map .service-sun::before, .universe-map .service-sun::after { animation: none; } }
+.universe-map .service-sun:not(.area-sun)::before { opacity: 1; filter: blur(10px) saturate(1.5);
+  background: conic-gradient(from var(--pearl-angle), #ffb8e2, #d6c2ff, #b8d8ff, #bff5e2, #ffe6b8, #ffb8e2);
+  -webkit-mask: radial-gradient(circle, #0006 10%, #000 55%); mask: radial-gradient(circle, #0006 10%, #000 55%); }
+/* Pearl as a solid ball: specular highlight, body shading into the lower right, rim light */
+.universe-map .service-sun:not(.area-sun)::after { background:
+    radial-gradient(circle at 30% 24%, #ffffff 0%, #fffffff2 4%, #ffffff80 9%, transparent 20%),
+    radial-gradient(circle at var(--pearl-x) 30%, #ffffff8c 0%, transparent 34%),
+    radial-gradient(circle at 34% 30%, transparent 30%, #6a4f8f26 58%, #4a2f6e66 80%, #2b1a45a6 100%),
+    radial-gradient(circle at 70% 78%, #ffffff33 0%, transparent 22%); }
+.universe-map .service-sun:not(.area-sun) { box-shadow: inset -10px -14px 26px #3a225c55, inset 4px 4px 10px #ffffffcc, 0 0 0 10px #ffffff14,
+  0 0 40px color-mix(in srgb, var(--page-primary-button) 70%, transparent), 0 0 110px color-mix(in srgb, var(--page-primary-button) 35%, transparent), 0 18px 40px #0008; }
+.universe-map .service-sun:not(.area-sun)::after { background:
+    radial-gradient(16% 12% at 33% 24%, #ffffff 0%, #ffffffd9 35%, transparent 100%),
+    radial-gradient(42% 34% at var(--pearl-x) 30%, #ffffff8c 0%, transparent 100%),
+    radial-gradient(118% 118% at 32% 28%, transparent 38%, #5a3d8240 58%, #3d2560a6 80%, #22123ad9 100%),
+    radial-gradient(30% 20% at 70% 84%, #ffffff40 0%, transparent 100%) !important; }
+.universe-map .service-sun:not(.area-sun)::after { opacity: 1 !important; background-size: auto !important; background-position: 0 0 !important; }
+/* AGI pearl turns horizontally: its pearly bands slide right to left behind the fixed shine and shading */
+.universe-map .service-sun:not(.area-sun)::before { inset: 0; border-radius: 50%; mix-blend-mode: multiply; opacity: .95; filter: blur(8px) saturate(1.4);
+  background: linear-gradient(100deg, #ffb8e2 0%, #d6c2ff 16%, #b8d8ff 33%, #bff5e2 50%, #ffe6b8 66%, #ffc4dc 83%, #ffb8e2 100%) 0 0 / 200% 100% repeat-x;
+  -webkit-mask: radial-gradient(circle closest-side, #000c 0%, #000 70%, #0008 100%); mask: radial-gradient(circle closest-side, #000c 0%, #000 70%, #0008 100%);
+  animation: pearl-turn 16s linear infinite !important; }
+@keyframes pearl-turn { from { background-position: 0 0; } to { background-position: -200% 0; } }
