@@ -44,8 +44,10 @@
   records.forEach(record => { record.title = record.title.replace(/\s+and\s+/gi, ' & '); });
   const domains = [...new Set(records.map(record => record.domain))].sort((a, b) => a.localeCompare(b));
   const serviceGroups = data.serviceGroups;
-  const state = { collection: 'service', family: null, maturity: 'all', planet: null, selectedId: null };
+  // view: 'universe' (AGI and its business areas, the landing view) or 'area' (Facilities).
+  const state = { view: 'universe', collection: 'service', family: null, maturity: 'all', planet: null, selectedId: null };
   const families = window.FamilyAtlas.families(records);
+  const universe = window.ATLAS_UNIVERSE;
   let overviewStamp = '';
   let previousFamily = null;
   const workspace = document.querySelector('.landscape-workspace');
@@ -71,6 +73,10 @@
     container.replaceChildren(); container.style.height = ''; container.classList.remove('has-focus');
     state.family = family;
     state.planet = family?.id || null;
+    // The page takes on the selected family's colour.
+    const colour = family ? window.FamilyAtlas.look(family.domain).colour : '';
+    document.body.classList.toggle('has-family-colour', Boolean(family));
+    if (family) document.body.style.setProperty('--family-colour', colour); else document.body.style.removeProperty('--family-colour');
     state.maturity = 'all';
     if (!family) { solar = null; return; }
     state.collection = family.collection;
@@ -118,6 +124,8 @@
       Object.assign(ghost.style, { left: `${origin.bounds.left}px`, top: `${origin.bounds.top}px`,
         width: `${origin.bounds.width}px`, height: `${origin.bounds.height}px` });
       document.body.append(ghost);
+      // Fallback: the ghost never outlives its animation, even if the animation is throttled or never finishes.
+      setTimeout(() => ghost.remove(), 700);
       track(ghost.animate([
         { transform: 'scale(1)', opacity: .9 },
         { transform: 'scale(3.2)', opacity: 0 }
@@ -129,8 +137,10 @@
 
     closeCase(false);
     previousFamily = family.id;
+    state.view = 'area';
     mountFamily(family);
     renderScene();
+    pushRoute();
     byId('active-stage').focus({ preventScroll: true });
     window.scrollTo({ top: 0, behavior: 'auto' });
     zoomFromPlanet(byId('solar-system'), origin, true);
@@ -139,6 +149,89 @@
   const preview = el('aside', 'planet-preview');
   preview.id = 'planet-preview'; preview.setAttribute('role', 'dialog'); preview.setAttribute('aria-modal', 'false'); preview.setAttribute('aria-labelledby', 'preview-title'); preview.hidden = true;
   document.body.append(preview);
+  // Cards carry a small external-link icon instead of a full-width button; it stays a real, labelled button for keyboard use.
+  function previewAction(label) {
+    const action = el('button', 'preview-open'); action.type = 'button';
+    action.setAttribute('aria-label', label);
+    action.append(icon('external-link'));
+    return action;
+  }
+  // The whole card is clickable: a click anywhere on it does what its action button does.
+  preview.addEventListener('click', event => {
+    const action = preview.querySelector('.preview-open');
+    if (action && !action.contains(event.target)) action.click();
+  });
+  // Curved connectors: a soft S-curve from a planet to what it opens, with a pulse of light that travels along it.
+  const svgNS = 'http://www.w3.org/2000/svg';
+  function makeCurve(className) {
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('class', `curve-link ${className}`); svg.setAttribute('aria-hidden', 'true');
+    const path = cls => { const node = document.createElementNS(svgNS, 'path'); node.setAttribute('class', cls); node.setAttribute('pathLength', '1000'); return node; };
+    const dot = cls => { const node = document.createElementNS(svgNS, 'circle'); node.setAttribute('class', cls); return node; };
+    svg.append(path('curve-base'), path('curve-pulse'), path('curve-pulse-head'), dot('curve-dot is-start'), dot('curve-dot is-end'));
+    return svg;
+  }
+  // a → b, leaving and arriving along one axis ('x' for side-by-side, 'y' for above/below).
+  function setCurve(svg, a, b, axis = 'x') {
+    // Straight connectors: layouts align the planet with its target so the line runs level.
+    const d = `M${a.x} ${a.y} L${b.x} ${b.y}`;
+    svg.querySelectorAll('path').forEach(node => node.setAttribute('d', d));
+    const [start, end] = svg.querySelectorAll('circle');
+    start.setAttribute('cx', a.x); start.setAttribute('cy', a.y); start.setAttribute('r', 2.5);
+    end.setAttribute('cx', b.x); end.setAttribute('cy', b.y); end.setAttribute('r', 3.5);
+  }
+  // Restart the draw-in, pulse and flash together.
+  function replayCurve(svg, ...targets) { [svg, ...targets].forEach(node => node?.classList.remove('is-live')); void svg.getBoundingClientRect(); [svg, ...targets].forEach(node => node?.classList.add('is-live')); }
+  const sphereOf = node => {
+    const box = (node.querySelector('.planet-body, .family-planet, .named-moon') || node).getBoundingClientRect();
+    // Planet images draw their sphere at 62.5% of the image width, centred.
+    return { x: box.left + box.width / 2, y: box.top + box.height / 2, r: box.width * .3125 * .95 };
+  };
+  // SVG elements have no .hidden property, so the attribute is toggled directly.
+  const tether = makeCurve('preview-curve'); tether.setAttribute('hidden', '');
+  document.body.append(tether);
+  function placeTether(target, placement) {
+    // Use the card's resting position (it may still be sliding in), so the lines land exactly on its edge.
+    const sphere = sphereOf(target), restLeft = parseFloat(preview.style.left) || 0, restTop = parseFloat(preview.style.top) || 0;
+    const card = { left: restLeft, top: restTop, right: restLeft + preview.offsetWidth, bottom: restTop + preview.offsetHeight };
+    // The connector is always horizontal: it meets the card at the planet's own height (the title is aligned there).
+    const clampY = () => Math.max(card.top + 22, Math.min(card.bottom - 22, sphere.y));
+    const clampX = value => Math.max(card.left + 22, Math.min(card.right - 22, value));
+    let a, b, axis = 'x';
+    if (placement === 'right') { a = { x: sphere.x + sphere.r, y: sphere.y }; b = { x: card.left, y: clampY() }; }
+    else if (placement === 'left') { a = { x: sphere.x - sphere.r, y: sphere.y }; b = { x: card.right, y: clampY() }; }
+    else if (placement === 'below') { axis = 'y'; a = { x: sphere.x, y: sphere.y + sphere.r }; b = { x: clampX(sphere.x), y: card.top }; }
+    else { axis = 'y'; a = { x: sphere.x, y: sphere.y - sphere.r }; b = { x: clampX(sphere.x), y: card.bottom }; }
+    // The connector takes the planet's colour: a use case's maturity, a family's colour, or the business area's tint.
+    const stageTone = { Established: '#f2b84b', Scaling: '#e24bc0', Emerging: '#3fd6c4' }[target.dataset.maturity];
+    const areaTone = { facilities: '#b58cf0', healthcare: '#3fbf7f' }[target.dataset.universe];
+    const tone = stageTone || areaTone || target.style.getPropertyValue('--family-colour').trim();
+    if (tone) tether.style.setProperty('--page-primary-button', tone); else tether.style.removeProperty('--page-primary-button');
+    setCurve(tether, a, b, axis);
+    // Side cards: like the full card — the line branches into two curves at the card's edge, lines run along
+    // that edge and fade, and soft ripples pulse from the dot on the planet.
+    const ns = 'http://www.w3.org/2000/svg';
+    tether.querySelectorAll('.curve-tail, .curve-ripple, defs').forEach(node => node.remove());
+    if (axis === 'x') {
+      const dir = placement === 'right' ? 1 : -1, r = 18, bx = b.x;
+      const d = `M${a.x} ${a.y} L${bx - dir * r} ${b.y} Q${bx} ${b.y} ${bx} ${b.y - r} M${bx - dir * r} ${b.y} Q${bx} ${b.y} ${bx} ${b.y + r}`;
+      tether.querySelectorAll('path').forEach(path => path.setAttribute('d', d));
+      const end = tether.querySelector('.curve-dot.is-end'); end?.setAttribute('cx', bx - dir * r);
+      const defs = document.createElementNS(ns, 'defs'); tether.prepend(defs);
+      [['up', b.y - r, Math.max(card.top + 14, b.y - r - 90)], ['down', b.y + r, Math.min(card.bottom - 14, b.y + r + 90)]].forEach(([way, from, to]) => {
+        const grad = document.createElementNS(ns, 'linearGradient'); grad.id = `preview-tail-${way}`; grad.setAttribute('gradientUnits', 'userSpaceOnUse');
+        grad.setAttribute('x1', bx); grad.setAttribute('x2', bx); grad.setAttribute('y1', from); grad.setAttribute('y2', to);
+        [['0', '1'], ['1', '0']].forEach(([offset, opacity]) => { const stop = document.createElementNS(ns, 'stop'); stop.setAttribute('offset', offset); stop.style.stopColor = 'var(--page-primary-button)'; stop.setAttribute('stop-opacity', opacity); grad.append(stop); });
+        defs.append(grad);
+        const tail = document.createElementNS(ns, 'path'); tail.setAttribute('class', 'curve-tail'); tail.setAttribute('pathLength', '1000');
+        tail.setAttribute('stroke', `url(#preview-tail-${way})`); tail.setAttribute('d', `M${bx} ${from} L${bx} ${to}`); tether.append(tail);
+      });
+    }
+    [0, 1, 2].forEach(index => { const ring = document.createElementNS(ns, 'circle'); ring.setAttribute('class', 'curve-ripple'); ring.style.animationDelay = `${.6 + index * .8}s`;
+      ring.setAttribute('cx', a.x); ring.setAttribute('cy', a.y); ring.setAttribute('r', 5); tether.append(ring); });
+    tether.removeAttribute('hidden');
+    replayCurve(tether, preview.querySelector('h3'));
+  }
   let keyboardPreview = false;
   let previewTarget = null, previewTimer = 0, previewEpoch = 0, dismissedPreviewTarget = null, pendingPreviewTarget = null;
   const excerpt = (value, limit) => value.length > limit ? `${value.slice(0, limit).replace(/\s+\S*$/, '')}…` : value;
@@ -148,7 +241,7 @@
     clearTimeout(previewTimer);
     previewTarget?.removeAttribute('aria-describedby');
     previewTarget?.setAttribute('aria-expanded', 'false');
-    previewTarget = null; preview.hidden = true;
+    previewTarget = null; preview.hidden = true; tether.setAttribute('hidden', '');
     document.body.classList.remove('planet-preview-open');
   }
   function showPreview(target) {
@@ -158,9 +251,24 @@
     hidePreview();
     const family = families.find(item => item.id === target.dataset.family);
     const record = records.find(item => item.id === target.dataset.id);
-    if (!family && !record) return;
+    const area = universe.planets.find(item => item.id === target.dataset.universe);
+    if (!family && !record && !area) return;
     previewTarget = target;
-    const meta = el('div', 'preview-meta', family ? `${family.records.length} ${family.records.length === 1 ? 'use case' : 'use cases'} · ${['Established', 'Scaling', 'Emerging'].map(stage => [stage, family.records.filter(item => item.maturity === stage).length]).filter(([, count]) => count).map(([stage, count]) => `${count} ${stage}`).join(' · ')}` : `${record.maturity} · ${record.prioritisation.category}`);
+    if (area) {
+      // Business-area planets: name, one-line description, and either "Coming soon" or an open action.
+      const live = area.status === 'live';
+      const meta = el('div', 'preview-meta'); meta.append(el('span', `preview-status${live ? '' : ' is-soon'}`, live ? 'Live' : 'Coming soon'));
+      const heading = el('h3', '', area.name); heading.id = 'preview-title';
+      preview.replaceChildren(meta, heading, el('p', 'preview-description', area.description));
+      if (live) {
+        const action = previewAction(`Open ${area.name}`);
+        action.addEventListener('click', () => { const origin = previewTarget; hidePreview(); openArea(area, origin); });
+        preview.append(action);
+      }
+    } else {
+    const meta = el('div', 'preview-meta', family ? `${family.records.length} ${family.records.length === 1 ? 'use case' : 'use cases'} · ${['Established', 'Scaling', 'Emerging'].map(stage => [stage, family.records.filter(item => item.maturity === stage).length]).filter(([, count]) => count).map(([stage, count]) => `${count} ${stage}`).join(' · ')}` : '');
+    // Use cases: the maturity shows as a chip, followed by the prioritisation category.
+    if (record && !family) meta.append(el('span', 'maturity-chip', record.maturity), el('span', 'preview-category', record.prioritisation.category));
     const heading = el('h3', '', family ? family.label : record.title); heading.id = 'preview-title';
     preview.replaceChildren(meta, heading);
     if (family) {
@@ -174,7 +282,7 @@
       value.append(el('strong', '', 'Value realised'), el('p', '', excerpt(record.value, 160)));
       preview.append(value);
     }
-    const action = setIconLabel(el('button', 'preview-open'), family ? 'Explore use cases' : 'Open the full card', 'arrow-right');
+    const action = previewAction(family ? `Explore ${family.label} use cases` : `Open the full card: ${record.title}`);
     action.addEventListener('click', () => {
       const origin = previewTarget;
       hidePreview();
@@ -182,23 +290,38 @@
       else { filtered = familyRecords(); openCase(record.id, origin); }
     });
     preview.append(action);
+    }
     preview.hidden = false; target.setAttribute('aria-describedby', preview.id); target.setAttribute('aria-controls', preview.id); target.setAttribute('aria-expanded', 'true');
     document.body.classList.add('planet-preview-open');
     const bounds = target.getBoundingClientRect();
     preview.style.maxHeight = '';
     const box = preview.getBoundingClientRect();
-    const margin = 12;
+    const margin = 8;
     let left = Math.max(margin, Math.min(innerWidth - box.width - margin, bounds.left + bounds.width / 2 - box.width / 2));
     let top, placement;
-    // Prefer the right side, then below, then left, then above, so the card never covers what you are reading.
-    const rightFits = bounds.right + box.width + margin <= innerWidth - margin;
-    const leftFits = bounds.left - box.width - margin >= margin;
+    // Cards open to the side of the planet: right, then left; if neither fits at full width, the roomier
+    // side with a narrower card. Only narrow (phone) screens fall back to below or above.
+    preview.style.width = '';
+    const rightRoom = innerWidth - margin - bounds.right - margin, leftRoom = bounds.left - margin - margin;
+    const rightFits = rightRoom >= box.width;
+    const leftFits = leftRoom >= box.width;
+    const sideWidth = Math.max(rightRoom, leftRoom);
+    // Side cards line up so their title sits level with the planet's centre (a short, straight connector).
+    const planetCentreY = sphereOf(target).y;
+    const titleOffset = () => { const title = preview.querySelector('h3'); return title ? title.offsetTop + title.offsetHeight / 2 : 40; };
+    const sideTop = height => Math.max(margin, Math.min(innerHeight - height - margin, planetCentreY - titleOffset()));
     if (rightFits) {
-      left = bounds.right + margin; top = Math.max(margin, Math.min(innerHeight - box.height - margin, bounds.top)); placement = 'right';
+      left = bounds.right + margin; top = sideTop(box.height); placement = 'right';
+    } else if (leftFits) {
+      left = bounds.left - box.width - margin; top = sideTop(box.height); placement = 'left';
+    } else if (sideWidth >= 240) {
+      preview.style.width = `${sideWidth}px`;
+      const height = preview.getBoundingClientRect().height;
+      placement = rightRoom >= leftRoom ? 'right' : 'left';
+      left = placement === 'right' ? bounds.right + margin : bounds.left - sideWidth - margin;
+      top = sideTop(height);
     } else if (bounds.bottom + box.height + margin <= innerHeight - margin) {
       top = bounds.bottom + margin; placement = 'below';
-    } else if (leftFits) {
-      left = bounds.left - box.width - margin; top = Math.max(margin, Math.min(innerHeight - box.height - margin, bounds.top)); placement = 'left';
     } else if (bounds.top - box.height - margin >= margin) {
       top = bounds.top - box.height - margin; placement = 'above';
     } else {
@@ -213,6 +336,7 @@
     }
     preview.style.left = `${left}px`; preview.style.top = `${Math.max(margin, top)}px`;
     preview.dataset.placement = placement;
+    placeTether(target, placement);
   }
   function deferPreviewHide() { clearTimeout(previewTimer); previewTimer = setTimeout(() => { if (!preview.contains(document.activeElement) && document.activeElement !== previewTarget) hidePreview(); }, 220); }
   const planetTarget = target => target instanceof Element ? target.closest('.family-world, .usecase-moon') : null;
@@ -269,10 +393,10 @@
     if (event.key === 'Tab' && pendingPreviewTarget && preview.hidden) showPreview(pendingPreviewTarget);
     if (event.key === 'Tab' && !preview.hidden && previewTarget) {
       const action = preview.querySelector('.preview-open');
-      if (event.target === previewTarget && !event.shiftKey) { event.preventDefault(); action.focus({ preventScroll: true }); }
+      if (action && event.target === previewTarget && !event.shiftKey) { event.preventDefault(); action.focus({ preventScroll: true }); }
       else if (event.target === action) {
         const origin = previewTarget;
-        const planets = [...document.querySelectorAll(origin.matches('.family-world') ? '.family-world' : '.usecase-moon')];
+        const planets = [...origin.parentElement.querySelectorAll(':scope > .family-world, :scope > .usecase-moon')];
         const next = event.shiftKey ? origin : planets[planets.indexOf(origin) + 1] || byId('overview-all');
         event.preventDefault(); hidePreview(); next.focus();
       }
@@ -286,6 +410,66 @@
     }
   }, true);
   const familyMap = window.createFamilyMap(byId('family-map'), chooseFamily);
+  // Universe level: AGI at the centre, each business area as a planet (configured in planets.js).
+  // Every current use case belongs to Facilities, the only live area.
+  const universeItems = universe.planets.map(planet => ({ ...planet, meta: planet.id === 'facilities' ? `${records.length} use cases` : '' }));
+  const universeMap = window.createUniverseMap(byId('universe-map'), (planet, button) => (planet.status === 'live' ? openArea(planet, button) : showPreview(button)), universe.centre.name);
+  let universeRendered = false;
+  function openArea(planet, trigger) {
+    if (planet.status !== 'live') return;
+    const origin = planetOrigin(trigger);
+    closeCase(false); mountFamily(null);
+    state.view = 'area';
+    renderScene();
+    pushRoute();
+    byId('family-heading').focus({ preventScroll: true });
+    window.scrollTo({ top: 0, behavior: 'auto' });
+    zoomFromPlanet(byId('family-map'), origin, true);
+  }
+  function showUniverse() {
+    stopNavigationZoom();
+    closeCase(false); mountFamily(null);
+    state.view = 'universe';
+    renderScene();
+  }
+  // Hash routes keep every level linkable and make Back work:
+  // #/ (AGI) · #/facilities/<service|internal> · #/facilities/<collection>/<family> · #<case-id> opens a card.
+  const slug = value => value.toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  function routeFor() {
+    if (state.view === 'universe') return '#/';
+    const base = `#/facilities/${state.collection}`;
+    return state.family ? `${base}/${slug(state.family.label)}` : base;
+  }
+  function pushRoute() { const route = routeFor(); if (location.hash !== route) history.pushState(null, '', route); }
+  function applyRoute() {
+    const hash = location.hash;
+    if (records.some(record => `#${record.id}` === hash)) { openLinkedCase(); return; }
+    const parts = decodeURIComponent(hash.replace(/^#/, '')).split('/').filter(Boolean);
+    if (parts[0] !== 'facilities') { showUniverse(); return; }
+    const collection = ['service', 'internal'].includes(parts[1]) ? parts[1] : state.collection;
+    const family = parts[2] ? families.find(item => item.collection === collection && slug(item.label) === parts[2]) : null;
+    closeCase(false);
+    state.view = 'area'; state.collection = collection;
+    mountFamily(family || null);
+    renderScene();
+  }
+  function renderBreadcrumb() {
+    const collectionName = state.collection === 'internal' ? 'Internal' : 'Service';
+    const levels = [{ label: universe.centre.name, href: '#/', title: universe.centre.fullName }];
+    if (state.view !== 'universe') {
+      levels.push({ label: 'Facilities', href: '#/facilities' }, { label: collectionName, href: `#/facilities/${state.collection}` });
+      if (state.family) levels.push({ label: state.family.label, href: routeFor() });
+    }
+    byId('breadcrumb-list').replaceChildren(...levels.map((level, index) => {
+      const item = el('li', 'breadcrumb-item');
+      const current = index === levels.length - 1;
+      const node = el(current ? 'span' : 'a', current ? 'breadcrumb-current' : 'breadcrumb-link', level.label);
+      if (current) node.setAttribute('aria-current', 'page'); else node.href = level.href;
+      if (level.title) node.title = level.title;
+      item.append(node);
+      return item;
+    }));
+  }
   // Home page side list: every family, grouped under Service and Internal; clicking one opens it.
   function buildFamilyIndex() {
     const host = byId('family-index');
@@ -326,8 +510,10 @@
   document.querySelectorAll('#collection-switch [data-collection]').forEach(button => {
     button.addEventListener('click', () => {
       closeCase(false); mountFamily(null);
+      state.view = 'area';
       state.collection = button.dataset.collection;
       renderScene();
+      pushRoute();
     });
   });
   domains.forEach(domain => { const option = el('option', '', domain); option.value = domain; byId('domain-filter').append(option); });
@@ -350,25 +536,31 @@
     return button;
   }
   function renderScene() {
+    // Safety net: nothing from a previous screen may linger (zoom ghosts, an orphaned full-card planet).
+    if (detail.hidden && !closingCase) {
+      document.querySelectorAll('.planet-zoom-ghost').forEach(node => node.remove());
+      { if (cardPlanet.matches(':popover-open')) cardPlanet.hidePopover(); cardPlanet.classList.remove('is-shown'); cardPlanet.style.setProperty('display', 'none', 'important'); }
+      document.querySelectorAll('.is-lifted').forEach(node => node.classList.remove('is-lifted'));
+    }
     const family = state.family;
     const collectionName = state.collection === 'internal' ? 'Internal' : 'Service';
-    const pathTitle = family ? family.label : 'Facilities technology atlas';
-    text('path-title', pathTitle);
-    document.title = `Al Ghurair — ${collectionName} / ${family ? family.label : 'Technology families'}`;
+    const inUniverse = state.view === 'universe';
+    document.title = inUniverse ? 'Al Ghurair — Tech Incubation Hub' : `Al Ghurair — Facilities / ${collectionName} / ${family ? family.label : 'Technology families'}`;
+    document.body.classList.toggle('is-universe', inUniverse);
+    byId('universe-view').hidden = !inUniverse;
+    if (inUniverse && !universeRendered) { universeMap.render(universeItems); universeRendered = true; }
+    const liveCount = universe.planets.filter(planet => planet.status === 'live').length;
+    text('universe-summary', `${universe.centre.fullName}: ${universe.planets.length} business areas, ${liveCount} live.`);
+    renderBreadcrumb();
     const scoped = records.filter(record => record.collection === state.collection);
     const shown = families.filter(item => item.collection === state.collection);
-    document.querySelectorAll('#collection-switch button').forEach(button => {
+    document.querySelectorAll('#collection-switch [data-collection]').forEach(button => {
       button.setAttribute('aria-pressed', String(button.dataset.collection === state.collection));
       button.querySelector('span').textContent = records.filter(record => record.collection === button.dataset.collection).length;
     });
-    byId('family-overview').hidden = Boolean(family);
-    workspace.hidden = !family;
-    byId('journey-home').querySelector('span').textContent = `${collectionName} technologies`;
-    byId('journey-home').setAttribute('aria-current', family ? 'false' : 'step');
-    byId('journey-cases').hidden = !family;
-    byId('journey-separator').hidden = !family;
-    text('journey-cases', family ? family.label : '');
-    byId('journey-cases').setAttribute('aria-current', family ? 'step' : 'false');
+    byId('family-overview').hidden = inUniverse || Boolean(family);
+    byId('family-index').hidden = inUniverse || Boolean(family);
+    workspace.hidden = inUniverse || !family;
     document.querySelector('.scene-toolbar').hidden = !family;
     document.querySelectorAll('[data-maturity-filter]').forEach(button => {
       const maturity = button.dataset.maturityFilter;
@@ -388,13 +580,12 @@
       const summary = `${shown.length} families, one planet each. Select a planet to explore its use cases by maturity.`;
       text('family-summary', summary);
       document.querySelectorAll('.family-index-group').forEach(group => group.classList.toggle('is-current', group.dataset.collection === state.collection));
-      const info = byId('collection-info'); info.dataset.tooltip = summary; info.setAttribute('aria-label', summary);
     }
   }
   function resetSystem() {
     stopNavigationZoom();
     const previous = state.family?.id || previousFamily;
-    closeCase(false); mountFamily(null); renderScene();
+    closeCase(false); mountFamily(null); state.view = 'area'; renderScene(); pushRoute();
     const target = [...document.querySelectorAll('[data-family]')].find(button => button.dataset.family === previous);
     (target || byId('family-heading')).focus({ preventScroll: true });
     window.scrollTo({ top: 0, behavior: 'auto' });
@@ -436,6 +627,7 @@
     svg.append(path); return svg;
   }
   function openCase(id, trigger, direction = 0) {
+    if (closingCase) return;
     const wasOpen = inspector.open && !detail.hidden;
     const origin = detail.hidden ? planetOrigin(trigger) : null;
     const record = records.find(item => item.id === id);
@@ -454,6 +646,7 @@
       indexDialogScroll = byId('browse-dialog').scrollTop;
       byId('browse-dialog').close();
     }
+    state.view = 'area';
     mountFamily(families.find(family => family.id === window.FamilyAtlas.key(record)));
     if (state.maturity !== 'all' && state.maturity !== record.maturity) state.maturity = 'all';
     // The named atlas stays present alongside the reader.
@@ -477,13 +670,15 @@
       const match = part.match(/^(Step \d+\s*:)([\s\S]*)$/);
       if (!match) return el('p', 'cx-lead', part.trim());
       const step = el('div', 'cx-step');
-      // Numbered node: "STEP" on top, the number beneath; no icon.
+      // Step card: an icon chosen from the step's wording, a "STEP n" chip, then the text.
       const stepNumber = (match[1].match(/\d+/) || [String(++stepIndex)])[0];
+      const copy = match[2].trim();
+      const badge = el('span', 'cx-step-icon'); badge.setAttribute('aria-hidden', 'true'); badge.append(icon(stepIcon(copy)));
       const node = el('span', 'cx-step-node'); node.setAttribute('aria-hidden', 'true');
       node.append(el('small', 'cx-step-word', 'Step'), el('strong', 'cx-step-num', stepNumber));
       const body = el('div', 'cx-step-body');
-      body.append(el('strong', 'cx-step-label sr-only', match[1].replace(/\s*:$/, '')), el('p', 'cx-step-copy', match[2].trim()));
-      step.append(node, body);
+      body.append(node, el('strong', 'cx-step-label sr-only', match[1].replace(/\s*:$/, '')), el('p', 'cx-step-copy', copy));
+      step.append(badge, body);
       return step;
     }));
     description.querySelectorAll('.cx-lead').forEach(clampLead);
@@ -547,7 +742,7 @@
       const value = el('span', 'cx-tile-value'); value.append(el('strong', '', valueText), el('small', '', maximum ? `of ${maximum}` : ''));
       dial.append(svg, value);
       card.append(dial, el('span', 'cx-tile-label', label), el('span', 'cx-tile-band', band ? bandText[band] : 'Not scored'));
-      card.setAttribute('aria-label', ariaLabel); card.title = title;
+      card.setAttribute('aria-label', ariaLabel); // no hover tooltip: the band and 'How to read the scores' explain it
       return card;
     };
     const bandOf = fraction => fraction >= .5 ? 'High' : fraction >= .25 ? 'Medium' : 'Low';
@@ -608,8 +803,11 @@
     stopNavigationZoom();
     const animate = !starsPaused && !reducedMotion.matches;
     if (!wasOpen) {
-      // First open: the floating panel glides in, scaling up and un-blurring.
-      if (animate) inspector.animate([{ opacity: 0, transform: 'translateX(56px) scale(.96)', filter: 'blur(6px)' }, { opacity: 1, transform: 'none', filter: 'blur(0)' }], { duration: 480, easing: 'cubic-bezier(.16,1,.3,1)' });
+      // First open, one continuous move: the galaxy fades away, the planet glides out, the card follows it in.
+      if (animate) {
+        try { inspector.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 600, easing: 'ease-out', pseudoElement: '::backdrop' }); } catch { /* ::backdrop animation unsupported: CSS fade still applies. */ }
+        inspector.animate([{ opacity: 0, transform: 'translateX(40px) scale(.97)', filter: 'blur(8px)' }, { opacity: 1, transform: 'none', filter: 'blur(0)' }], { duration: 700, delay: 180, easing: 'cubic-bezier(.22,1,.36,1)', fill: 'backwards' });
+      }
     } else if (animate) {
       // Next / previous: the panel stays put; only its content flips across.
       const shift = (direction || 1) * 28;
@@ -617,9 +815,21 @@
         [{ opacity: 0, transform: `translateX(${shift}px)` }, { opacity: 1, transform: 'translateX(0)' }],
         { duration: 280, easing: 'cubic-bezier(.16,1,.3,1)' }));
     }
+    showCardPlanet(id, animate);
 
   }
   // Long intro text shows three lines with an ellipsis; click (or Enter/Space) expands it.
+  // Picks a fitting icon for a step from its wording.
+  function stepIcon(text) {
+    const t = text.toLowerCase();
+    const rules = [[/phone|mobile|alert|notif|whatsapp|pushed/, 'smartphone'], [/sensor|iot|meter|telemetr|monitor/, 'radio'],
+      [/machine-learning|\bml\b|model|\bai\b|predict|forecast|learn/, 'brain'], [/\bapp\b/, 'smartphone'], [/dashboard|report|kpi|portal|view/, 'layout-dashboard'],
+      [/robot|autonomous|drone/, 'bot'], [/camera|vision|photo|scan|image/, 'scan-eye'], [/staff|team|technician|crew|worker|manager|people|operator/, 'users'],
+      [/contract|document|invoice|bid|tender|form|record/, 'file-text'], [/schedul|route|plan|allocat|dispatch|assign/, 'route'],
+      [/energy|power|hvac|bms|chiller/, 'zap'], [/repair|maint|fix|fault|work order/, 'wrench'], [/data|platform|cloud|stream/, 'database']];
+    const found = rules.find(([pattern]) => pattern.test(t));
+    return found ? found[1] : 'circle-dot';
+  }
   function clampLead(lead) {
     lead.classList.add('is-clamped');
     requestAnimationFrame(() => {
@@ -643,16 +853,218 @@
     const next = filtered[index + offset];
     if (next) openCase(next.id, null, offset);
   }
+  // Full card opens as its own screen: the chosen planet glides out of the galaxy, carrying its
+  // name and maturity, and the reading panel sits beside it.
+  const cardPlanet = el('div', 'card-planet');
+  cardPlanet.setAttribute('popover', 'manual'); cardPlanet.setAttribute('aria-hidden', 'true');
+  document.body.append(cardPlanet);
+  let cardPlanetId = null, cardPlanetToken = 0;
+  const moonFor = id => id ? document.querySelector(`.usecase-moon[data-id="${CSS.escape(id)}"] .named-moon`) : null;
+  // Planet column and card sit side by side as one centred pair; narrow screens fall back to the card alone.
+  function resetCardPosition() { ['left', 'right', 'width', 'margin-left', 'margin-right', '--hero-extra'].forEach(property => inspector.style.removeProperty(property)); }
+  // The card title's untransformed position on screen (its left edge and vertical centre).
+  function titleBox() {
+    const title = byId('detail-title');
+    let x = 0, y = 0, node = title;
+    while (node && node !== inspector) { x += node.offsetLeft; y += node.offsetTop; node = node.offsetParent; }
+    const line = Math.min(title.offsetHeight, 40);
+    return { x: inspector.offsetLeft + x, y: inspector.offsetTop + y + line / 2 };
+  }
+  function cardPlanetSlot() {
+    resetCardPosition();
+    const card = inspector.getBoundingClientRect();
+    const gap = 56, edge = 40;
+    const size = Math.min(260, innerHeight * .32, Math.max(0, innerWidth - card.width - gap - edge * 2 - 40));
+    if (size < 140) return null;
+    const column = Math.max(size + 40, 280);
+    // The card spreads into the room left over beside the planet column, up to a comfortable reading width.
+    // The panel sits close to the right edge of the screen; the planet column stays beside it.
+    const right = 32;
+    const width = Math.max(card.width, Math.min(960, innerWidth - column - gap - edge - right));
+    // Planet + panel are centred as one group (on wide screens the panel stops growing, so the group stays in the middle).
+    const left = Math.max(edge, (innerWidth - (column + gap + width)) / 2);
+    // Arabic (right-to-left) mirrors the pair: the card on the left, the planet on the right.
+    const rtl = document.documentElement.dir === 'rtl';
+    const planetLeft = rtl ? left + width + gap : left, cardLeft = rtl ? left : left + column + gap;
+    inspector.style.setProperty('--planet-x', `${Math.round(planetLeft + column / 2)}px`);
+    Object.assign(inspector.style, { left: `${cardLeft}px`, right: 'auto', width: `${width}px`, marginLeft: '0', marginRight: '0' });
+    // The planet sits level with the card title (a straight, horizontal connector). The title is pushed down a
+    // little so the planet clears the top of the screen. Offsets ignore the card's entrance transform.
+    // The card starts at the top; the planet sits level with its title, shrinking if needed so it stays on screen.
+    // The planet sits a little below the top of the card, clear of the screen edge.
+    // The planet sits in the vertical middle of the screen.
+    return { left: planetLeft, column, size, rtl, y: innerHeight / 2 + 75 };
+  }
+  function placeCardPlanet(slot) {
+    const height = slot.size + 150;
+    Object.assign(cardPlanet.style, { left: `${slot.left}px`, top: `${slot.y - height / 2}px`, width: `${slot.column}px`, height: `${height}px` });
+    cardPlanet.style.setProperty('--orb', `${slot.size}px`);
+    cardPlanetSlotCache = { ...slot, top: slot.y - height / 2 };
+    placeCardLink();
+  }
+  // Connector: a curve from the planet's edge (its sphere is 62.5% of the image width) to the start of the card title.
+  let cardPlanetSlotCache = null;
+  function placeCardLink() {
+    const link = cardPlanet.querySelector('.card-curve'), slot = cardPlanetSlotCache;
+    if (!link || !slot) return;
+    const title = titleBox();
+    // Starts on the thin orbit ring around the planet (ring radius = 46% of the planet box).
+    const dir = slot.rtl ? -1 : 1;
+    const a = { x: slot.left + slot.column / 2 + dir * slot.size * .46, y: slot.top + slot.size / 2 };
+    // Horizontal, ending on the glowing left edge of the content area.
+    const scroll = byId('detail-scroll'); let edge = 0, node = scroll;
+    while (node && node !== inspector) { edge += node.offsetLeft; node = node.offsetParent; }
+    // The curves meet the card's own outer edge, and the lines run along that edge.
+    const bx = slot.rtl ? inspector.offsetLeft + inspector.offsetWidth + 2 : inspector.offsetLeft - 2, r = 46;
+    // Hide the straight edge where the curves join, so the edge itself appears to bend out to the planet.
+    let top = 0; node = scroll; while (node && node !== inspector) { top += node.offsetTop; node = node.offsetParent; }
+    scroll.style.setProperty('--join-top', `${(a.y - inspector.offsetTop - top - r).toFixed(1)}px`);
+    scroll.style.setProperty('--join-height', `${2 * r}px`);
+    setCurve(link, a, { x: bx, y: a.y }, 'x');
+    // Like a branch joining a stem: the line runs to the card and splits into two curves that flow up and down into its edge.
+    const d = `M${a.x} ${a.y} L${bx - dir * r} ${a.y} Q${bx} ${a.y} ${bx} ${a.y - r} M${bx - dir * r} ${a.y} Q${bx} ${a.y} ${bx} ${a.y + r}`;
+    link.querySelectorAll('path:not(.curve-tail)').forEach(path => path.setAttribute('d', d));
+    const end = link.querySelector('.curve-dot.is-end'); if (end) { end.setAttribute('cx', bx - dir * r); end.setAttribute('cy', a.y); }
+    // From each curve, a line runs along the card's edge (up and down) and fades out before the card's ends.
+    const ns = 'http://www.w3.org/2000/svg';
+    let defs = link.querySelector('defs');
+    if (!defs) {
+      defs = document.createElementNS(ns, 'defs');
+      ['up', 'down'].forEach(dir => {
+        const grad = document.createElementNS(ns, 'linearGradient'); grad.id = `curve-tail-${dir}`; grad.setAttribute('gradientUnits', 'userSpaceOnUse');
+        [['0', '1'], ['1', '0']].forEach(([offset, opacity]) => { const stop = document.createElementNS(ns, 'stop'); stop.setAttribute('offset', offset); stop.style.stopColor = 'var(--page-primary-button)'; stop.setAttribute('stop-opacity', opacity); grad.append(stop); });
+        defs.append(grad);
+        const tail = document.createElementNS(ns, 'path'); tail.setAttribute('class', `curve-tail is-${dir}`); tail.setAttribute('pathLength', '1000'); tail.setAttribute('stroke', `url(#curve-tail-${dir})`); link.append(tail);
+      });
+      link.prepend(defs);
+    }
+    // Ripples: soft rings pulsing out from the bright dot where the connector leaves the planet.
+    if (!link.querySelector('.curve-ripple')) [0, 1, 2].forEach(index => { const ring = document.createElementNS(ns, 'circle'); ring.setAttribute('class', 'curve-ripple'); ring.style.animationDelay = `${index * 0.8}s`; link.append(ring); });
+    link.querySelectorAll('.curve-ripple').forEach(ring => { ring.setAttribute('cx', a.x); ring.setAttribute('cy', a.y); ring.setAttribute('r', 7); });
+    const cardTop = inspector.offsetTop + 70, cardBottom = inspector.offsetTop + inspector.offsetHeight - 40;
+    [['up', a.y - r, Math.max(cardTop, a.y - r - 140)], ['down', a.y + r, Math.min(cardBottom, a.y + r + 160)]].forEach(([dir, from, to]) => {
+      const grad = defs.querySelector(`#curve-tail-${dir}`);
+      grad.setAttribute('x1', bx); grad.setAttribute('x2', bx); grad.setAttribute('y1', from); grad.setAttribute('y2', to);
+      link.querySelector(`.curve-tail.is-${dir}`).setAttribute('d', `M${bx} ${from} L${bx} ${to}`);
+    });
+  }
+  function cardPlanetContent(source) {
+    const button = source.closest('.usecase-moon');
+    const orb = el('div', 'card-planet-orb');
+    orb.dataset.maturity = (button?.dataset.maturity || '').toLowerCase();
+    // The page glow behind the planet takes the planet's colour too.
+    const tone = { established: '#f2b84b', scaling: '#e24bc0', emerging: '#3fd6c4' }[orb.dataset.maturity];
+    inspector.style.setProperty('--planet-tone', tone || 'var(--page-primary-button)');
+    // The connector (line, curves, edge lines, ripples) is drawn in the planet's colour.
+    if (tone) cardPlanet.style.setProperty('--page-primary-button', tone); else cardPlanet.style.removeProperty('--page-primary-button');
+    const image = source.cloneNode(); image.className = 'card-planet-image'; image.removeAttribute('style');
+    const stage = (button?.dataset.maturity || '').toLowerCase();
+    // The planet turns horizontally (right to left); Emerging keeps its ring from the still image.
+    const turning = stage ? [window.FamilyAtlas.spinGlobe(`assets/planets/strip-${stage}.png`, 60, `assets/planets/surfaces/${window.FamilyAtlas.maturityDay[stage] || 'moon'}.jpg`)] : [];
+    if (stage === 'emerging') orb.append(image, el('span', 'planet-ring is-back'), ...turning, el('span', 'orb-shade'), el('span', 'planet-ring is-front'));
+    else orb.append(image, ...turning, el('span', 'orb-shade'));
+    orb.classList.toggle('is-emerging', stage === 'emerging');
+    const caption = el('div', 'card-planet-caption');
+    const maturity = button?.dataset.maturity || '';
+    // Title, then category, then the maturity chip at the bottom.
+    caption.append(el('strong', '', button?.querySelector('.usecase-title')?.textContent || ''));
+    const category = button?.querySelector('.case-category')?.textContent;
+    if (category) caption.append(el('span', 'card-planet-category', category));
+    if (maturity) caption.append(el('span', `card-planet-maturity is-${maturity.toLowerCase()}`, maturity));
+    const link = makeCurve('card-curve');
+    cardPlanet.replaceChildren(orb, caption, link);
+    return { orb, caption, link };
+  }
+  function showCardPlanet(id, animate) {
+    const token = ++cardPlanetToken;
+    cardPlanet.querySelectorAll('*').forEach(node => node.getAnimations().forEach(animation => animation.cancel()));
+    document.querySelectorAll('.is-lifted').forEach(node => node.classList.remove('is-lifted'));
+    const source = moonFor(id), slot = cardPlanetSlot();
+    if (!source || !slot) { { if (cardPlanet.matches(':popover-open')) cardPlanet.hidePopover(); cardPlanet.classList.remove('is-shown'); cardPlanet.style.setProperty('display', 'none', 'important'); } cardPlanetId = null; return; }
+    const wasShown = cardPlanet.matches(':popover-open') && cardPlanetId !== null;
+    const from = source.getBoundingClientRect();
+    const { orb, caption, link } = cardPlanetContent(source);
+    placeCardPlanet(slot);
+    if (!cardPlanet.matches(':popover-open')) cardPlanet.showPopover();
+    cardPlanet.classList.add('is-shown'); cardPlanet.style.removeProperty('display');
+    cardPlanetId = id;
+    source.classList.add('is-lifted'); source.closest('.usecase-moon')?.classList.add('is-lifted');
+    if (!animate || token !== cardPlanetToken) { placeCardLink(); replayCurve(link); return; }
+    const rise = [{ opacity: 0, transform: 'translateY(14px)' }, { opacity: 1, transform: 'none' }];
+    if (wasShown) {
+      orb.animate([{ opacity: 0, transform: 'scale(.82) rotate(-8deg)' }, { opacity: 1, transform: 'none' }], { duration: 380, easing: 'cubic-bezier(.16,1,.3,1)' });
+      caption.animate(rise, { duration: 320, delay: 80, easing: 'cubic-bezier(.16,1,.3,1)', fill: 'backwards' });
+      placeCardLink(); replayCurve(link, byId('detail-title'));
+      return;
+    }
+    const target = orb.getBoundingClientRect();
+    if (from.width && from.bottom > 0 && from.top < innerHeight) {
+      const dx = from.left + from.width / 2 - (target.left + target.width / 2), dy = from.top + from.height / 2 - (target.top + target.height / 2);
+      orb.animate([{ transform: `translate(${dx}px, ${dy}px) scale(${from.width / target.width})` }, { transform: 'none' }], { duration: 820, easing: 'cubic-bezier(.22,1,.36,1)' });
+    } else {
+      orb.animate([{ opacity: 0, transform: 'scale(.8)' }, { opacity: 1, transform: 'none' }], { duration: 380, easing: 'ease-out' });
+    }
+    caption.animate(rise, { duration: 560, delay: 480, easing: 'cubic-bezier(.22,1,.36,1)', fill: 'backwards' });
+    // Once the planet lands, the curve draws in and the light starts travelling to the title.
+    setTimeout(() => { if (token === cardPlanetToken) { placeCardLink(); replayCurve(link, byId('detail-title')); document.body.classList.add('card-linked'); } }, 900);
+  }
+  function hideCardPlanet(animate) {
+    document.body.classList.remove('card-linked');
+    const token = ++cardPlanetToken;
+    const source = moonFor(cardPlanetId);
+    cardPlanetId = null;
+    const finish = () => {
+      if (token !== cardPlanetToken) return;
+      source?.classList.remove('is-lifted');
+      source?.closest('.usecase-moon')?.classList.remove('is-lifted');
+      { if (cardPlanet.matches(':popover-open')) cardPlanet.hidePopover(); cardPlanet.classList.remove('is-shown'); cardPlanet.style.setProperty('display', 'none', 'important'); }
+    };
+    const orb = cardPlanet.querySelector('.card-planet-orb'), caption = cardPlanet.querySelector('.card-planet-caption');
+    if (!cardPlanet.matches(':popover-open') || !orb) { finish(); return; }
+    const from = source?.getBoundingClientRect(), box = orb.getBoundingClientRect();
+    if (!animate || !from?.width || from.bottom <= 0 || from.top >= innerHeight) { finish(); return; }
+    cardPlanet.querySelectorAll('*').forEach(node => node.getAnimations().forEach(animation => animation.cancel()));
+    const dx = from.left + from.width / 2 - (box.left + box.width / 2), dy = from.top + from.height / 2 - (box.top + box.height / 2);
+    cardPlanet.querySelectorAll('.card-planet-caption, .card-curve').forEach(node => node.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 160, fill: 'forwards' }));
+    orb.animate([{ transform: 'none' }, { transform: `translate(${dx}px, ${dy}px) scale(${from.width / box.width})` }], { duration: 640, easing: 'cubic-bezier(.65,0,.35,1)', fill: 'forwards' })
+      .finished.then(finish, finish);
+  }
+  window.addEventListener('resize', () => {
+    if (!cardPlanetId) return;
+    const slot = cardPlanetSlot();
+    if (slot) placeCardPlanet(slot); else hideCardPlanet(false);
+  });
+  // Closing reverses the opening: the card slips away and the background fades while the planet
+  // flies home, and only then is the dialog torn down, so the galaxy never pops back in.
+  let closingCase = false;
   function closeCase(restore = true) {
+    if (detail.hidden || closingCase) return;
+    // Programmatic closes (restore = false) are followed by a scene change, so they stay instant.
+    const animate = restore && !starsPaused && !reducedMotion.matches;
+    hideCardPlanet(animate && returnOrigin !== 'index');
+    if (!animate) { finishCloseCase(restore); return; }
+    closingCase = true;
+    inspector.getAnimations().forEach(animation => animation.cancel());
+    const out = [inspector.animate([{ opacity: 1, transform: 'none', filter: 'blur(0)' }, { opacity: 0, transform: 'translateX(32px) scale(.97)', filter: 'blur(6px)' }], { duration: 340, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards' })];
+    try { out.push(inspector.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 420, easing: 'ease-in-out', fill: 'forwards', pseudoElement: '::backdrop' })); } catch { /* ::backdrop animation unsupported. */ }
+    Promise.all(out.map(animation => animation.finished)).catch(() => {}).then(() => {
+      closingCase = false;
+      finishCloseCase(restore);
+      out.forEach(animation => animation.cancel());
+    });
+  }
+  function finishCloseCase(restore) {
     if (detail.hidden) return;
+    if (cardPlanetId) hideCardPlanet(false);
     state.selectedId = null;
     detail.hidden = true;
     stopNavigationZoom();
     inspector.close();
     inspector.hidden = true;
+    resetCardPosition();
     workspace.classList.remove('is-reading');
     renderScene();
-    if (records.some(record => `#${record.id}` === location.hash)) history.replaceState(null, '', location.pathname + location.search);
+    if (records.some(record => `#${record.id}` === location.hash)) history.replaceState(null, '', routeFor());
     if (restore && returnOrigin === 'index') {
       byId('browse-dialog').showModal();
       byId('browse-list').scrollTop = indexScroll;
@@ -688,7 +1100,7 @@
   });
   inspector.addEventListener('cancel', event => { event.preventDefault(); closeCase(); });
   // Clicking the dimmed area left of the side panel closes it.
-  inspector.addEventListener('click', event => { if (event.target === inspector) { const r = inspector.getBoundingClientRect(); if (event.clientX < r.left) closeCase(); } });
+  inspector.addEventListener('click', event => { if (event.target === inspector) { const r = inspector.getBoundingClientRect(); if (event.clientX < r.left || event.clientX > r.right || event.clientY < r.top || event.clientY > r.bottom) closeCase(); } });
   byId('detail-close').addEventListener('click', () => closeCase());
   document.querySelectorAll('[data-detail-section]').forEach(button => {
     button.addEventListener('click', () => {
@@ -709,7 +1121,6 @@
   });
   byId('case-prev').addEventListener('click', () => stepCase(-1));
   byId('case-next').addEventListener('click', () => stepCase(1));
-  byId('journey-home').addEventListener('click', resetSystem);
   byId('overview-all').addEventListener('click', () => {
     resetBrowser();
     browse.collection = state.collection;
@@ -741,12 +1152,13 @@
   byId('search').addEventListener('input', event => { browse.query = event.target.value; renderBrowser(); });
   byId('reset-filters').addEventListener('click', resetBrowser);
   byId('empty-reset').addEventListener('click', () => { resetBrowser(); byId('search').focus(); });
-  document.querySelector('.brand').addEventListener('click', event => { event.preventDefault(); resetSystem(); window.scrollTo(0, 0); });
-  ['about-open', 'source-notes-open'].forEach(id => byId(id).addEventListener('click', () => byId('about-dialog').showModal()));
+  document.querySelector('.brand').addEventListener('click', event => { event.preventDefault(); showUniverse(); pushRoute(); byId('universe-heading').focus({ preventScroll: true }); window.scrollTo(0, 0); });
+  ['about-open'].forEach(id => byId(id).addEventListener('click', () => byId('about-dialog').showModal()));
   byId('about-close').addEventListener('click', () => byId('about-dialog').close());
   function openLinkedCase() {
     const linkedRecord = records.find(record => record.id === location.hash.slice(1));
     if (!linkedRecord) return;
+    state.view = 'area';
     mountFamily(families.find(family => family.id === window.FamilyAtlas.key(linkedRecord)));
     filtered = familyRecords();
     returnRecordId = linkedRecord.id;
@@ -756,7 +1168,7 @@
     renderScene();
     openCase(linkedRecord.id);
   }
-  window.addEventListener('hashchange', openLinkedCase);
-  renderScene();
-  openLinkedCase();
+  window.addEventListener('hashchange', applyRoute);
+  window.addEventListener('popstate', applyRoute);
+  applyRoute();
 })();
