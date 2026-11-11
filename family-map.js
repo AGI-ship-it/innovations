@@ -130,7 +130,7 @@
   window.FamilyAtlas = { families, key, label, look, spinGlobe, maturityDay, stages, arrange, advance };
   // Shared measured geometry keeps overview and case motion on exact tracks.
   function createMap(container, onSelect, { caseMode = false, universe = false, centreLabel = 'Facilities', centreSubLabel = '', domain = '' } = {}) {
-    let layout = null, current = [], frame = 0, previous = null, speed = 0;
+    let layout = null, current = [], frame = 0, previous = null, speed = 0, comets = [], cometTime = 0;
     const nodes = new Map();
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
     container.classList.toggle('case-orbit-map', caseMode);
@@ -222,8 +222,23 @@
         ...(caseMode ? { 'data-orbit-maturity': stages[index] } : {}), class: `family-track track-${index}`,
       })).filter(Boolean));
       // The universe orbit carries a soft pulse of light that travels around it.
-      if (universe) layout.rings.forEach((ring, index) => { if (items.some(item => item.ring === index)) paths.append(svgElement('ellipse', {
-        cx: layout.centre.x, cy: layout.centre.y, rx: ring.rx, ry: ring.ry, pathLength: 1000, class: 'orbit-comet' })); });
+      // A shining comet: layered strokes (long faint tail → short bright core) plus a sparkling head, moved each frame.
+      comets = [];
+      if (universe) layout.rings.forEach((ring, index) => {
+        if (!items.some(item => item.ring === index)) return;
+        const shape = { cx: layout.centre.x, cy: layout.centre.y, rx: ring.rx, ry: ring.ry, pathLength: 1000 };
+        // Many stacked strokes, each shorter, thinner and brighter towards the head, blend into one smooth fading tail.
+        const steps = 12;
+        const layers = Array.from({ length: steps }, (_, i) => {
+          const t = i / (steps - 1), length = Math.round(220 - t * 206);
+          const line = svgElement('ellipse', { ...shape, class: `orbit-comet${i === steps - 1 ? ' is-core' : ''}` });
+          line.style.strokeDasharray = `${length} ${1000 - length}`; line.style.strokeWidth = (1 + t * 1.6).toFixed(2);
+          line.style.opacity = (0.07 + t * t * 0.25).toFixed(3); line.dataset.length = length; return line;
+        });
+        const head = svgElement('circle', { r: 3.2, class: 'orbit-comet-head' });
+        paths.append(...layers, head);
+        comets.push({ layers, head, path: layers[0], phase: index * 370 });
+      });
       items.forEach(item => { nodes.get(item.id).dataset.orbitRing = String(item.ring); });
       container.dataset.orbitGeometry = JSON.stringify(layout);
       position();
@@ -272,7 +287,7 @@
           const body = element('span', 'planet-body');
           body.append(image);
           if (item.strip) { body.classList.add('has-spin'); body.append(spinGlobe(item.strip, 80)); }
-          body.append(element('span', 'planet-shade'));
+          body.append(element('span', 'planet-shade'), element('span', 'planet-glint'));
           button.append(body);
         } else {
           // Use-case planets: a fixed dark side painted over the sphere.
@@ -315,6 +330,34 @@
     // The space below the header depends on the breadcrumb/tab row, so re-fit when it changes and once things settle.
     const bar = document.querySelector('.family-bar'); if (bar) observer.observe(bar);
     window.addEventListener('resize', () => measure());
+    // The comet keeps travelling while planets pause on hover; it stops only for Pause motion / reduced motion.
+    function moveComets(elapsed) {
+      const still = container.closest('[hidden]') || reduced.matches || document.hidden || document.body.classList.contains('stars-paused');
+      if (!still) cometTime = (cometTime + elapsed * 1000 / 14) % 1000;   // one lap every 14 s
+      const matrix = paths.getScreenCTM(); if (!matrix) return;
+      const heads = comets.map(comet => {
+        const at = (cometTime + comet.phase) % 1000;
+        comet.layers.forEach(line => { line.style.strokeDashoffset = String(-(at - Number(line.dataset.length))); });
+        const total = comet.path.getTotalLength();
+        const point = comet.path.getPointAtLength(at / 1000 * total);
+        comet.head.setAttribute('cx', point.x.toFixed(1)); comet.head.setAttribute('cy', point.y.toFixed(1));
+        return new DOMPoint(point.x, point.y).matrixTransform(matrix);
+      });
+      // A planet catches the light as the comet passes over it: a moving sheen where the comet is.
+      nodes.forEach(button => {
+        const body = button.querySelector('.planet-body'); if (!body) return;
+        const box = body.getBoundingClientRect(), radius = box.width * .31;
+        const cx = box.left + box.width / 2, cy = box.top + box.height / 2;
+        let best = null, near = Infinity;
+        heads.forEach(head => { const d = Math.hypot(head.x - cx, head.y - cy); if (d < near) { near = d; best = head; } });
+        const glint = still || !best ? 0 : Math.max(0, 1 - near / (radius * 1.6));
+        body.style.setProperty('--glint', (glint * glint * (3 - 2 * glint)).toFixed(3));
+        if (best) {
+          body.style.setProperty('--gx', `${(50 + (best.x - cx) / (radius * 2) * 100).toFixed(1)}%`);
+          body.style.setProperty('--gy', `${(50 + (best.y - cy) / (radius * 2) * 100).toFixed(1)}%`);
+        }
+      });
+    }
     function animate(timestamp) {
       const elapsed = previous === null ? 0 : Math.min((timestamp - previous) / 1000, .05); previous = timestamp;
       const paused = container.closest('[hidden]') || reduced.matches || document.hidden
@@ -324,6 +367,7 @@
         speed += (1 - speed) * (1 - Math.exp(-elapsed / .65));
         layout.nodes = advance(layout, elapsed * speed * (universe ? 3 : 1)); position();
       } else speed = 0;
+      if (universe && comets.length) moveComets(elapsed);
       frame = requestAnimationFrame(animate);
     }
     frame = requestAnimationFrame(animate);

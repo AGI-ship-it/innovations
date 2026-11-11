@@ -3038,3 +3038,30 @@ html[lang="ar"] #reader-dialog .cx-value h3 { letter-spacing: 0; }
 /* Value box: a purple tint fading from the left */
 #reader-dialog .cx-value #detail-value { background: linear-gradient(90deg, #8b5cf633 0%, #8b5cf614 45%, #8b5cf605 100%) !important; }
 [data-theme="light"] #reader-dialog .cx-value #detail-value { background: linear-gradient(90deg, #ede4fb 0%, #f6f2fc 55%, #fbf9fd 100%) !important; }
+
+/* Universe comet: a shining head with a smooth fading tail; planets catch its light as it passes */
+.orbit-comet { animation: none !important; stroke-linecap: round; fill: none; stroke: #f4e4ff; filter: none; }
+.orbit-comet.is-core { stroke: #fff; opacity: 1 !important; filter: drop-shadow(0 0 3px #fff) drop-shadow(0 0 8px #e9c8ff); }
+.orbit-comet-head { fill: #fff; filter: drop-shadow(0 0 4px #fff) drop-shadow(0 0 10px #f0d6ff) drop-shadow(0 0 20px #c99bff); animation: comet-sparkle 1.2s ease-in-out infinite alternate; }
+@keyframes comet-sparkle { from { r: 2.6; } to { r: 4; } }
+.universe-map .planet-glint { position: absolute; left: 50%; top: 50%; width: 63%; aspect-ratio: 1; translate: -50% -50%; border-radius: 50%; pointer-events: none; z-index: 3;
+  opacity: var(--glint, 0); mix-blend-mode: screen;
+  background: radial-gradient(circle at var(--gx, 50%) var(--gy, 50%), #fff 0%, #fbefffe6 8%, #ecd2ffa6 22%, #c99bff4d 42%, transparent 68%);
+  box-shadow: inset 0 0 18px #f3dcff80; }
+.stars-paused .orbit-comet-head { animation: none; }
+@media (prefers-reduced-motion: reduce) { .orbit-comet, .orbit-comet-head, .universe-map .planet-glint { display: none; } }
+
+/* Hover card summary: eyebrow, one-line description, two key scores, short expected value (content only; card style unchanged) */
+aside.planet-preview .preview-eyebrow { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; letter-spacing: 1.6px; text-transform: uppercase; color: var(--eyebrow-tone) !important; }
+aside.planet-preview .preview-eyebrow .preview-dot { opacity: .7; }
+aside.planet-preview .preview-description { -webkit-line-clamp: 1 !important; line-clamp: 1 !important; margin-bottom: 10px; }
+aside.planet-preview .preview-scores { margin: 0; padding: 10px 0 2px; border-top: 1px solid #ffffff1f; display: grid; gap: 6px; }
+aside.planet-preview .preview-score { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+aside.planet-preview .preview-score dt { font-size: 13px; color: #ffffffb3; font-weight: 400; }
+aside.planet-preview .preview-score dd { margin: 0; font-size: 15px; font-weight: 600; color: #fff; font-variant-numeric: tabular-nums; }
+aside.planet-preview .preview-score .preview-max { font-weight: 400; color: inherit; opacity: .75; }
+aside.planet-preview .preview-score[data-band="High"] dd { color: #6ee7a8; }
+aside.planet-preview .preview-score[data-band="Medium"] dd { color: #ffb45a; }
+aside.planet-preview .preview-score[data-band="Low"] dd { color: #e3958c; }
+aside.planet-preview .preview-value strong { text-transform: uppercase; letter-spacing: 1.4px; font-size: 10.5px; }
+aside.planet-preview .preview-value p { font-weight: 600; -webkit-line-clamp: unset; }

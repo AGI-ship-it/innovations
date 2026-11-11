@@ -267,8 +267,12 @@
       }
     } else {
     const meta = el('div', 'preview-meta', family ? `${family.records.length} ${family.records.length === 1 ? 'use case' : 'use cases'} · ${['Established', 'Scaling', 'Emerging'].map(stage => [stage, family.records.filter(item => item.maturity === stage).length]).filter(([, count]) => count).map(([stage, count]) => `${count} ${stage}`).join(' · ')}` : '');
-    // Use cases: the maturity shows as a chip, followed by the prioritisation category.
-    if (record && !family) meta.append(el('span', 'maturity-chip', record.maturity), el('span', 'preview-category', record.prioritisation.category));
+    // Use cases: an eyebrow in the maturity's colour — "SCALING · CASE 08".
+    if (record && !family) {
+      meta.classList.add('preview-eyebrow');
+      meta.style.setProperty('--eyebrow-tone', { Established: '#f2b84b', Scaling: '#e24bc0', Emerging: '#3fd6c4' }[record.maturity] || '#e24bc0');
+      meta.append(el('span', '', record.maturity), el('span', 'preview-dot', '·'), el('span', '', 'Case'), el('span', 'preview-case-no', String(record.sourceId).padStart(2, '0')));
+    }
     const heading = el('h3', '', family ? family.label : record.title); heading.id = 'preview-title';
     preview.replaceChildren(meta, heading);
     if (family) {
@@ -277,10 +281,29 @@
       preview.append(list);
       if (family.records.length > 3) preview.append(el('p', 'preview-more', `+ ${family.records.length - 3} more use cases`));
     } else {
-      preview.append(el('p', 'preview-description', excerpt(record.description, 220)));
-      const value = el('div', 'preview-value');
-      value.append(el('strong', '', 'Value realised'), el('p', '', excerpt(record.value, 160)));
-      preview.append(value);
+      // Summary only: one line of description, two key scores and a short value. The full card has the detail.
+      const lead = (record.description.split(/(?<=[.!?؟])\s|Step 1:|The outputs? (?:is|are) |It is needed because /)[0] || record.description).trim();
+      preview.append(el('p', 'preview-description', lead));
+      const p = record.prioritisation || {};
+      const number = value => new Intl.NumberFormat('en-GB', { maximumFractionDigits: 2 }).format(value);
+      const band = fraction => fraction >= .5 ? 'High' : fraction >= .25 ? 'Medium' : 'Low';
+      const rows = el('dl', 'preview-scores');
+      [['Priority', p.priorityScore, 16], ['Viability', p.viability, 4]].forEach(([label, raw, maximum]) => {
+        const scored = typeof raw === 'number';
+        const row = el('div', 'preview-score'); if (scored) row.dataset.band = band(raw / maximum);
+        const figure = el('dd', ''); figure.append(el('span', '', scored ? number(raw) : '–'), el('span', 'preview-max', scored ? ` / ${maximum}` : ''));
+        row.append(el('dt', '', label), figure); rows.append(row);
+      });
+      preview.append(rows);
+      // The first clause of the value statement, when it is short enough to read at a glance.
+      // Up to about two lines; a long "Source: result" statement keeps just the result. Never cut mid-sentence.
+      let short = String(record.value || '').split(/;\s*|؛\s*/)[0].trim();
+      if (short.length > 100) { const after = short.split(/:\s+/).slice(1).join(': '); if (after && after.length <= 100) short = after; }
+      if (short && short.length <= 100) {
+        const value = el('div', 'preview-value');
+        value.append(el('strong', '', 'Expected value'), el('p', '', short));
+        preview.append(value);
+      }
     }
     const action = previewAction(family ? `Explore ${family.label} use cases` : `Open the full card: ${record.title}`);
     action.addEventListener('click', () => {
