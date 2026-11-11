@@ -3011,3 +3011,30 @@ html[dir="rtl"] #reader-dialog .cx-tile-band { right: auto; left: 10px; }
 #browse-dialog .ui-select-list { max-width: min(340px, calc(100vw - 48px)); }
 #browse-dialog .browse-filters > :nth-last-child(-n+2) .ui-select-list, #browse-dialog .ui-select:last-of-type .ui-select-list { left: auto; right: 0; }
 html[dir="rtl"] #browse-dialog .browse-filters > :nth-last-child(-n+2) .ui-select-list { right: auto; left: 0; }
+/* Busy families: smaller planets and tighter labels so the system needs less room and stays larger on screen */
+.case-orbit-map.is-dense .named-moon { width: 52px !important; height: 44px !important; margin-bottom: 0 !important; }
+.case-orbit-map.is-dense .usecase-moon { width: 170px; padding: 2px; }
+.case-orbit-map.is-dense .usecase-title { font-size: 14px; line-height: 1.25; margin-top: 2px; }
+.case-orbit-map.is-dense .usecase-maturity { margin-top: 6px !important; }
+
+/* Value realised styled like How it works: a section heading with a rule, then the value in a soft box */
+#reader-dialog .case-detail .cx-value { display: block !important; padding: 0 !important; background: none !important; box-shadow: none !important; border: 0 !important; overflow: visible; }
+#reader-dialog .cx-value .cx-value-head { display: flex !important; align-items: center; gap: 10px; margin: 0 0 8px; }
+#reader-dialog .cx-value .cx-value-icon { display: none; }
+#reader-dialog .cx-value h3 { flex: 0 0 auto; margin: 0; padding: 0; border: 0; font-size: 11px; font-weight: 600 !important; letter-spacing: 1.6px; text-transform: uppercase; color: #d9cde4 !important; }
+#reader-dialog .cx-value .cx-value-head::after { content: ''; order: 2; flex: 1; height: 1px; background: linear-gradient(90deg, #ffffff1c, transparent); }
+#reader-dialog .cx-value .cx-note { order: 3; margin: 0 !important; font-size: 11px; }
+#reader-dialog .cx-value #detail-value { margin: 0 !important; padding: 14px 16px; border-radius: 16px; background: #ffffff0a; line-height: 1.5; }
+[data-theme="light"] #reader-dialog .cx-value #detail-value { background: #f3f5f8; }
+html[lang="ar"] #reader-dialog .cx-value h3 { letter-spacing: 0; }
+:root:root #reader-dialog .case-detail .cx-value, :root:root:not([data-theme="light"]) #reader-dialog .case-detail .cx-value { background: none !important; box-shadow: none !important; } #reader-dialog .cx-value::before, #reader-dialog .cx-value::after { display: none !important; }
+/* Steps without boxes: chip + text; a faint dashed line joins each chip to the next */
+@media (min-width: 1000px) {
+  :root:root #reader-dialog .case-detail .cx-timeline .cx-step-body, [data-theme="light"]:root:root #reader-dialog .case-detail .cx-timeline .cx-step-body { background: none !important; padding: 0 !important; }
+  #reader-dialog .cx-timeline { gap: 24px; }
+  #reader-dialog .cx-timeline .cx-step:not(:last-child)::after { top: 11px !important; left: 92px !important; right: -18px !important; width: auto !important; }
+  html[dir="rtl"] #reader-dialog .cx-timeline .cx-step:not(:last-child)::after { left: -18px !important; right: 92px !important; }
+}
+/* Value box: a purple tint fading from the left */
+#reader-dialog .cx-value #detail-value { background: linear-gradient(90deg, #8b5cf633 0%, #8b5cf614 45%, #8b5cf605 100%) !important; }
+[data-theme="light"] #reader-dialog .cx-value #detail-value { background: linear-gradient(90deg, #ede4fb 0%, #f6f2fc 55%, #fbf9fd 100%) !important; }
