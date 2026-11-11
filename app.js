@@ -301,7 +301,7 @@
       if (short.length > 100) { const after = short.split(/:\s+/).slice(1).join(': '); if (after && after.length <= 100) short = after; }
       if (short && short.length <= 100) {
         const value = el('div', 'preview-value');
-        value.append(el('strong', '', 'Expected value'), el('p', '', short));
+        value.append(el('strong', '', 'Value realised'), el('p', '', short));
         preview.append(value);
       }
     }
