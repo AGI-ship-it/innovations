@@ -3321,3 +3321,13 @@ aside.planet-preview .preview-value p { font-weight: 600; -webkit-line-clamp: un
   filter: drop-shadow(0 0 1px #ffffffcc) drop-shadow(0 0 5px #ffffff73) !important; }
 .svg-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
 .universe-map .service-sun.agi-planet .agi-mark-wrap .sun-mark { filter: none !important; }
+.universe-map .service-sun.agi-planet .agi-mark-wrap { filter: none !important; }
+.universe-map .service-sun.agi-planet .agi-mark-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+/* AGI globe edge: shade overlaps the surface by a hair and the globe is trimmed to a clean circle (no light fringe at the rim) */
+.universe-map .service-sun.agi-planet { clip-path: circle(calc(50% - .75px) at 50% 50%); background: transparent !important; }
+.universe-map .service-sun.agi-planet .globe-shade { inset: -2px !important; }
+/* Facilities page: smaller family planets held closer to the centre (like the home page) */
+.family-map:not(.case-orbit-map):not(.universe-map) .family-planet { width: 78px; height: 64px; }
+.family-map:not(.case-orbit-map):not(.universe-map) .family-world { width: 140px; }
+.family-map:not(.case-orbit-map):not(.universe-map) .family-world .family-name { font-size: 12.5px; }
+.family-map:not(.case-orbit-map):not(.universe-map) .family-world .family-count { font-size: 10.5px; }

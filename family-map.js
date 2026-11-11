@@ -79,7 +79,8 @@
     const maxWidth = Math.max(...items.map(item => item.width), 120);
     const maxHeight = Math.max(...items.map(item => item.height), 90);
     // Orbits scale with how many planets there are: a family of two stays compact; big families use the full width.
-    const reach = compact || loose ? Infinity : 220 + items.length * 52;
+    // The Facilities overview (no caseMode, default centre) keeps its families close to the centre, like the home page.
+    const reach = compact || loose ? Infinity : (!caseMode && !centreSize ? 170 + items.length * 34 : 220 + items.length * 52);
     const outerX = Math.max(48, Math.min(width / 2 - maxWidth / 2 - 16, reach));
     // Desktop overview starts at the height left in the first screen; it grows only if labels would collide.
     let height = compact ? Math.max(caseMode ? 1000 : 1260, items.length * 125) : fitHeight ? Math.max(fitHeight, items.length * 40) : Math.max(caseMode ? 720 : 960, items.length * 66);
@@ -134,29 +135,37 @@
     return nodes;
   }
   window.FamilyAtlas = { families, key, label, look, spinGlobe, maturityDay, stages, arrange, advance };
-  // Builds (once) an SVG filter that maps a flat image onto the front of a sphere. Sampling moves outward by
-  // asin(n) − n per axis, so the image stays true at the centre and compresses toward the rim.
-  function ensureSphereWrapFilter() {
-    if (document.getElementById('sphere-wrap')) return;
-    const N = 512, canvas = document.createElement('canvas'); canvas.width = canvas.height = N;
-    const ctx = canvas.getContext('2d'), image = ctx.createImageData(N, N), data = image.data, S = .6;
-    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
-      const nx = (x + .5) / N * 2 - 1, ny = (y + .5) / N * 2 - 1, i = (y * N + x) * 4;
-      let r = 128, g = 128;
-      if (nx * nx + ny * ny < 1) {
-        r = Math.round(255 * (.5 + (Math.asin(nx) - nx) * .5 / S));
-        g = Math.round(255 * (.5 + (Math.asin(ny) - ny) * .5 / S));
+  // Paints the mark onto the front of a sphere at high resolution with smooth (bilinear) sampling:
+  // each sphere pixel reads the flat mark at asin(n) per axis, so it is true at the centre and bends toward the rim.
+  function paintWrappedMark(canvas, src) {
+    const SIZE = 720, MARK = .54;
+    canvas.width = canvas.height = SIZE;
+    const image = new Image();
+    image.onload = () => {
+      const flat = document.createElement('canvas'); flat.width = flat.height = SIZE;
+      const fctx = flat.getContext('2d'), m = SIZE * MARK;
+      fctx.drawImage(image, (SIZE - m) / 2, (SIZE - m) / 2, m, m);
+      const from = fctx.getImageData(0, 0, SIZE, SIZE).data;
+      const ctx = canvas.getContext('2d'), out = ctx.createImageData(SIZE, SIZE), to = out.data;
+      const sample = (x, y, channel) => {
+        const x0 = Math.floor(x), y0 = Math.floor(y), fx = x - x0, fy = y - y0;
+        const at = (px, py) => (px < 0 || py < 0 || px >= SIZE || py >= SIZE) ? 0 : from[(py * SIZE + px) * 4 + channel];
+        return (at(x0, y0) * (1 - fx) + at(x0 + 1, y0) * fx) * (1 - fy) + (at(x0, y0 + 1) * (1 - fx) + at(x0 + 1, y0 + 1) * fx) * fy;
+      };
+      const half = SIZE / 2;
+      for (let y = 0; y < SIZE; y++) for (let x = 0; x < SIZE; x++) {
+        const nx = (x + .5) / half - 1, ny = (y + .5) / half - 1;
+        if (nx * nx + ny * ny >= 1) continue;
+        const sx = (Math.asin(nx) + 1) * half - .5, sy = (Math.asin(ny) + 1) * half - .5, i = (y * SIZE + x) * 4;
+        const a = sample(sx, sy, 3);
+        if (!a) continue;
+        // Colour channels are premultiplied-free here, so weight them by alpha to avoid dark fringes.
+        const r = sample(sx, sy, 0), g = sample(sx, sy, 1), b = sample(sx, sy, 2);
+        to[i] = r; to[i + 1] = g; to[i + 2] = b; to[i + 3] = a;
       }
-      data[i] = r; data[i + 1] = g; data[i + 2] = 128; data[i + 3] = 255;
-    }
-    ctx.putImageData(image, 0, 0);
-    const holder = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    holder.setAttribute('class', 'svg-defs'); holder.setAttribute('aria-hidden', 'true');
-    holder.innerHTML = `<filter id="sphere-wrap" primitiveUnits="objectBoundingBox" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB">
-      <feImage href="${canvas.toDataURL()}" x="0" y="0" width="1" height="1" preserveAspectRatio="none" result="map"/>
-      <feDisplacementMap in="SourceGraphic" in2="map" scale="${S}" xChannelSelector="R" yChannelSelector="G" result="bent"/>
-      <feGaussianBlur in="bent" stdDeviation=".0022"/></filter>`;
-    document.body.append(holder);
+      ctx.putImageData(out, 0, 0);
+    };
+    image.src = src;
   }
   // Shared measured geometry keeps overview and case motion on exact tracks.
   function createMap(container, onSelect, { caseMode = false, universe = false, centreLabel = 'Facilities', centreSubLabel = '', domain = '' } = {}) {
@@ -191,9 +200,11 @@
       if (universe) {
         sun.classList.add('agi-planet');
         // The mark is wrapped onto the sphere: an SVG displacement filter bends it like a decal on a globe.
-        const wrap = element('span', 'agi-mark-wrap'); wrap.append(mark);
+        const wrap = element('span', 'agi-mark-wrap');
+        const canvas = document.createElement('canvas'); canvas.className = 'agi-mark-canvas'; canvas.setAttribute('aria-hidden', 'true');
+        wrap.append(canvas);
         sun.append(spinGlobe('assets/planets/solar/2k_moon.jpg', 24), wrap, element('span', 'globe-shade'));
-        ensureSphereWrapFilter();
+        paintWrappedMark(canvas, mark.src);
       } else sun.append(mark);
     }
     const caption = element('span', 'centre-caption', caseMode || universe ? centreLabel : 'TECHNOLOGY FAMILIES');
