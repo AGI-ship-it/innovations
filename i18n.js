@@ -15,9 +15,11 @@
   const D = {
     'Skip to solar system': 'انتقل إلى المجموعة الشمسية', 'Tech Incubation Hub': 'مركز احتضان التقنيات', 'Tech Incubation Hub home': 'الصفحة الرئيسية لمركز احتضان التقنيات',
     'Service': 'الخدمات', 'Internal': 'الداخلية', 'Search use cases': 'ابحث في حالات الاستخدام', 'AGI': 'AGI', 'Al Ghurair Investment': 'الغرير للاستثمار',
-    'Facilities': 'المرافق', 'Healthcare': 'الرعاية الصحية', 'Coming soon': 'قريبًا', 'Live': 'متاح', 'Explore': 'استكشف',
+    'Facilities': 'المرافق', 'Healthcare': 'الرعاية الصحية', 'Foods & Agriculture': 'الأغذية والزراعة', 'Mobility & Automotive': 'التنقل والسيارات', 'Coming soon': 'قريبًا', 'Live': 'متاح', 'Explore': 'استكشف',
     'Technology use cases for facilities management services and operations.': 'حالات استخدام التقنية لخدمات وعمليات إدارة المرافق.',
     'Technology use cases for the healthcare business are being prepared.': 'يجري إعداد حالات استخدام التقنية لقطاع الرعاية الصحية.',
+    'Technology use cases for the foods and agriculture business are being prepared.': 'يجري إعداد حالات استخدام التقنية لقطاع الأغذية والزراعة.',
+    'Technology use cases for the mobility and automotive business are being prepared.': 'يجري إعداد حالات استخدام التقنية لقطاع التنقل والسيارات.',
     'Open Facilities': 'افتح المرافق',
     'Service families': 'عائلات الخدمات', 'Internal families': 'العائلات الداخلية', 'All families': 'كل العائلات',
     'All maturities': 'كل مستويات النضج', 'Established': 'راسخة', 'Scaling': 'قيد التوسع', 'Emerging': 'ناشئة',
@@ -34,8 +36,16 @@
     'Each gauge shows the score against its maximum. Strong (green) is 50% or more, Moderate (orange) 25–50%, Low (red) under 25%. Maturity, Viability and Feasibility are out of 4; Priority is Viability × Feasibility, out of 16. Rank 1 is the highest.':
       'يعرض كل مؤشر الدرجة مقارنةً بحدها الأقصى. قوي (أخضر) 50% أو أكثر، متوسط (برتقالي) من 25% إلى 50%، منخفض (أحمر) أقل من 25%. النضج والجدوى وقابلية التنفيذ من 4، والأولوية حاصل ضرب الجدوى في قابلية التنفيذ من 16. الترتيب 1 هو الأعلى.',
     'Reported benchmark': 'معيار مُبلَّغ عنه', 'Rank': 'الترتيب', 'Strong': 'قوي', 'Moderate': 'متوسط', 'Low': 'منخفض', 'Not scored': 'غير مُقيَّم',
-    'Maturity': 'النضج', 'Priority': 'الأولوية', 'Viability': 'الجدوى', 'Feasibility': 'قابلية التنفيذ', 'Step': 'خطوة', 'Challenge': 'التحدي', 'Outcome': 'النتيجة',
-    'Quick win': 'مكسب سريع', 'Consider for pilot': 'تُدرس للتجربة', 'Long-term invest': 'استثمار طويل الأجل', 'Deprioritise': 'أولوية منخفضة',
+    'Maturity': 'النضج', 'Technology maturity': 'النضج التقني', 'Priority': 'الأولوية', 'Viability': 'الجدوى', 'Feasibility': 'قابلية التنفيذ', 'Step': 'خطوة', 'Challenge': 'التحدي', 'Outcome': 'النتيجة',
+    'About Technology maturity': 'عن النضج التقني', 'About Priority': 'عن الأولوية', 'About Viability': 'عن الجدوى', 'About Feasibility': 'عن قابلية التنفيذ',
+    "How proven the technology is: 1 early stage, 2 pilots only, 3 scaling, 4 established. High from 3.": "مدى ثبوت التقنية: 1 مرحلة مبكرة، 2 تجارب فقط، 3 قيد التوسع، 4 راسخة. مرتفع ابتداءً من 3.",
+    "Viability × feasibility, out of 16. The label is the category: Quick win (high value, ready now), Long-term invest (high value, not ready yet), Consider for pilot (ready, value unproven), Deprioritise (low on both).": "حاصل ضرب الجدوى في قابلية التنفيذ، من 16. التسمية هي الفئة: مكسب سريع (قيمة عالية وجاهزة الآن)، استثمار طويل الأجل (قيمة عالية وغير جاهزة بعد)، تُدرس للتجربة (جاهزة وقيمتها غير مثبتة)، أولوية منخفضة (منخفضة في الاثنتين).",
+    "Business value, 1–4: the average of revenue, client value and experience, resilience, and digital, data and AI. High from 2.5.": "القيمة التجارية من 1 إلى 4: متوسط الإيرادات، وقيمة العميل وتجربته، والمرونة، والتحول الرقمي والبيانات والذكاء الاصطناعي. مرتفع ابتداءً من 2.5.",
+    "Business value, 1–4: the average of cost and efficiency, resilience, workforce, and digital, data and AI. High from 2.5.": "القيمة التجارية من 1 إلى 4: متوسط التكلفة والكفاءة، والمرونة، والقوى العاملة، والتحول الرقمي والبيانات والذكاء الاصطناعي. مرتفع ابتداءً من 2.5.",
+    "How ready AGFS is to build it today, 1–4: the average of strategic alignment, adoption, technical complexity, technology maturity and data readiness. High from 2.6.": "مدى جاهزية AGFS لتنفيذها اليوم، من 1 إلى 4: متوسط التوافق الاستراتيجي وسهولة التبني والتعقيد التقني والنضج التقني وجاهزية البيانات. مرتفع ابتداءً من 2.6.",
+    'High': 'مرتفع', 'Very high': 'مرتفع جدًا', 'Quick win': 'مكسب سريع',
+    "Technology maturity: how proven the technology is (1 early stage, 2 pilots only, 3 scaling, 4 established). Viability: the business value, the average of four value drivers. Feasibility: how ready AGFS is to build it today, the average of strategic alignment, adoption, technical complexity, technology maturity and data readiness. Each is scored 1–4: High from 2.5 for viability and 2.6 for feasibility, Very high from 3.5. Priority is viability × feasibility (out of 16) and shows the category: Quick win (high value, ready now), Long-term invest (high value, not ready yet), Consider for pilot (ready, value unproven), Deprioritise (low on both). Rank 1 is highest. Scores are analyst judgement, to be validated with AGFS.":
+      "النضج التقني: مدى ثبوت التقنية (1 مرحلة مبكرة، 2 تجارب فقط، 3 قيد التوسع، 4 راسخة). الجدوى: القيمة التجارية، وهي متوسط أربعة محركات للقيمة. قابلية التنفيذ: مدى جاهزية AGFS لتنفيذها اليوم، وهي متوسط التوافق الاستراتيجي وسهولة التبني والتعقيد التقني والنضج التقني وجاهزية البيانات. تُقيَّم كل منها من 1 إلى 4: مرتفع ابتداءً من 2.5 للجدوى و2.6 لقابلية التنفيذ، ومرتفع جدًا ابتداءً من 3.5. الأولوية حاصل ضرب الجدوى في قابلية التنفيذ (من 16) وتُظهر الفئة: مكسب سريع (قيمة عالية وجاهزة الآن)، استثمار طويل الأجل (قيمة عالية وغير جاهزة بعد)، تُدرس للتجربة (جاهزة وقيمتها غير مثبتة)، أولوية منخفضة (منخفضة في الاثنتين). الترتيب 1 هو الأعلى. التقييمات اجتهاد تحليلي يجب التحقق منه مع AGFS.", 'Consider for pilot': 'تُدرس للتجربة', 'Long-term invest': 'استثمار طويل الأجل', 'Deprioritise': 'أولوية منخفضة',
     'Each gauge fills in proportion to the score as a percentage of its maximum, and every tile uses the same colour rule: Low (grey-red) below 25%, Moderate (orange) 25% to below 50%, Strong (green) 50% or above. Maturity is out of 4. Viability and Feasibility are out of 4; Priority is their product, out of 16. These display bands summarise the existing scores; they are not recommendations. Rank is the research ordering within its collection: 1 is highest.':
       'يمتلئ كل مؤشر بنسبة الدرجة إلى حدها الأقصى، وتتبع كل البطاقات قاعدة الألوان نفسها: منخفض (رمادي مائل للأحمر) أقل من 25%، ومتوسط (برتقالي) من 25% إلى أقل من 50%، وقوي (أخضر) 50% أو أكثر. النضج من 4، والجدوى وقابلية التنفيذ من 4، والأولوية حاصل ضربهما من 16. هذه الفئات تلخّص الدرجات الحالية وليست توصيات. الترتيب هو تسلسل البحث داخل المجموعة، و1 هو الأعلى.',
     'THE FACILITIES RESEARCH INDEX': 'فهرس أبحاث المرافق', 'Use-case index': 'فهرس حالات الاستخدام', 'Collection': 'المجموعة', 'All collections': 'كل المجموعات',
@@ -101,7 +111,7 @@
     [/^(.+)\. (Established|Scaling|Emerging)\. Open description and value realised\.$/, (m, x, s) => `${x}. ${stageAr[s]}. افتح الوصف والقيمة المحققة.`],
     [/^(.+)\. (\d+) use cases? across maturity levels\. Explore family\.$/, (m, x, n) => `${t(x)}. ${cases(+n)} عبر مستويات النضج. استكشف العائلة.`],
     [/^(.+), (\d+) use cases?, (service|internal)$/, (m, x, n, c) => `${t(x)}، ${cases(+n)}، ${c === 'service' ? 'الخدمات' : 'الداخلية'}`],
-    [/^(Facilities|Healthcare)\. (Open Facilities|Coming soon)\.$/, (m, x, y) => `${t(x)}. ${t(y)}.`],
+    [/^(Facilities|Healthcare|Foods & Agriculture|Mobility & Automotive)\. (Open Facilities|Coming soon)\.$/, (m, x, y) => `${t(x)}. ${t(y)}.`],
     [/^(Collection|Service group|Maturity|Technology domain): (.+)$/, (m, a, b) => `${t(a)}: ${t(b)}`],
     [/^About (Service|Internal) use cases$/, (m, c) => `عن حالات استخدام ${t(c)}`],
   ];

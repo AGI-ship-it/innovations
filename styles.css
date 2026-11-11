@@ -3065,3 +3065,259 @@ aside.planet-preview .preview-score[data-band="Medium"] dd { color: #ffb45a; }
 aside.planet-preview .preview-score[data-band="Low"] dd { color: #e3958c; }
 aside.planet-preview .preview-value strong { text-transform: uppercase; letter-spacing: 1.4px; font-size: 10.5px; }
 aside.planet-preview .preview-value p { font-weight: 600; -webkit-line-clamp: unset; }
+
+/* Universe: four business areas — slightly smaller planets around AGI */
+.universe-map .universe-world[data-universe="foods"] { --world-glow: #f0a24b; }
+.universe-map .universe-world[data-universe="automotive"] { --world-glow: #5aa9ff; }
+.universe-map .planet-body { width: 196px !important; height: 160px !important; }
+@media (max-width: 760px) { .universe-map .planet-body { width: 128px !important; height: 104px !important; } }
+
+/* Home (universe): smaller planets and labels */
+.universe-map .planet-body { width: 128px !important; height: 104px !important; }
+.universe-map .universe-world .family-name { font-size: 17px; margin-top: 4px; }
+.universe-map .universe-world .family-count { font-size: 11.5px; }
+.universe-map .service-sun { width: 210px; }
+@media (max-width: 760px) { .universe-map .service-sun { width: 150px; } .universe-map .planet-body { width: 96px !important; height: 78px !important; } .universe-map .universe-world .family-name { font-size: 16px; } }
+
+/* AGI centre: a luminous lavender orb — glowing core, lit rim, violet haze, faint swirls turning inside */
+.universe-map .service-sun.agi-planet { overflow: visible; isolation: isolate;
+  background: radial-gradient(circle at 50% 46%, #ffffff 0%, #f7f0ff 22%, #e6d6ff 48%, #c9b0f5 72%, #a989e6 90%, #8f6fd6 100%);
+  box-shadow: 0 0 0 1px #ffffff40 inset, 0 0 26px 4px #d9c2ff99, 0 0 70px 14px #b48cff59, 0 0 160px 40px #8a5cff2e; }
+.universe-map .service-sun.agi-planet::before { display: block !important; content: ''; position: absolute; inset: 0; border-radius: 50%; z-index: 2; pointer-events: none; animation: none !important;
+  background: radial-gradient(circle at 50% 50%, transparent 70%, #ffffff59 90%, #ffffffb3 99%, transparent 100%),
+    radial-gradient(45% 30% at 36% 20%, #ffffffb3 0%, transparent 70%);
+  filter: none; opacity: 1; mix-blend-mode: normal; -webkit-mask: none; mask: none; }
+.universe-map .service-sun.agi-planet::after { display: block !important; content: ''; position: absolute; inset: -14%; border-radius: 50%; z-index: -1; pointer-events: none;
+  background: radial-gradient(circle, #c7a6ff40 0%, #a07af026 45%, transparent 70%); animation: agi-breathe 6s ease-in-out infinite alternate !important; }
+@keyframes agi-breathe { from { opacity: .7; transform: scale(.97); } to { opacity: 1; transform: scale(1.04); } }
+.universe-map .service-sun.agi-planet .spin-globe { width: 100%; z-index: 1; opacity: .22; mix-blend-mode: soft-light; filter: blur(1.5px) saturate(.8); }
+.universe-map .service-sun.agi-planet .globe-shade { z-index: 1; background: radial-gradient(circle at 50% 50%, transparent 55%, #7a55c833 85%, #5b3aa84d 100%); }
+.universe-map .service-sun.agi-planet .sun-mark { z-index: 3; filter: none; }
+.stars-paused .universe-map .service-sun.agi-planet::after { animation: none !important; }
+@media (prefers-reduced-motion: reduce) { .universe-map .service-sun.agi-planet::after { animation: none !important; } }
+
+/* AGI centre as a lavender globe: a visible turning surface, lit on one side, falling into shadow on the other */
+.universe-map .service-sun.agi-planet .spin-globe { opacity: .6 !important; mix-blend-mode: luminosity !important; filter: saturate(.6) brightness(1.25) contrast(1.05) !important; }
+.universe-map .service-sun.agi-planet .globe-shade { z-index: 2 !important;
+  background: radial-gradient(70% 70% at 30% 28%, #ffffff8c 0%, #ffffff26 35%, transparent 60%),
+    radial-gradient(120% 120% at 26% 24%, transparent 0%, transparent 44%, #6a45b84d 58%, #3a2170b3 74%, #1a0d38eb 90%) !important; }
+.universe-map .service-sun.agi-planet { background: radial-gradient(circle at 34% 30%, #ffffff 0%, #efe4ff 25%, #cdb5f7 55%, #9f7ee0 80%, #7a58c4 100%) !important; }
+/* AGI globe: no halo ring or glare around it */
+.universe-map .service-sun.agi-planet { box-shadow: none !important; }
+.universe-map .service-sun.agi-planet::after { display: none !important; }
+.universe-map .service-sun.agi-planet::before { background: radial-gradient(45% 30% at 36% 20%, #ffffff8c 0%, transparent 70%) !important; }
+/* AGI globe: a light rim line and a thin ring crossing its middle */
+.universe-map .family-centre { --agi: 210px; }
+.universe-map .service-sun.agi-planet { box-shadow: 0 0 0 1.5px #f3e9ffcc, 0 0 6px 1px #e2d0ff66 !important; position: relative; z-index: 1; }
+.universe-map .agi-ring { position: absolute; left: 50%; top: calc(var(--agi) / 2); width: calc(var(--agi) * 1.55); height: calc(var(--agi) * .34); translate: -50% -50%; rotate: -14deg;
+  border-radius: 50%; border: 1.5px solid #f3e9ffd9; box-shadow: 0 0 6px #e2d0ff80, inset 0 0 6px #e2d0ff59; pointer-events: none; }
+.universe-map .agi-ring.is-back { z-index: 0; opacity: .55; }
+.universe-map .agi-ring.is-front { z-index: 2; clip-path: inset(50% 0 0 0); }
+@media (max-width: 760px) { .universe-map .family-centre { --agi: 150px; } }
+.universe-map .family-centre > span.agi-ring { display: block !important; margin: 0 !important; }
+/* AGI globe: a real sphere shadow — lit from the upper left, night side falling away to the lower right */
+.universe-map .service-sun.agi-planet .globe-shade { z-index: 2 !important;
+  background: radial-gradient(55% 55% at 30% 27%, #ffffff80 0%, #ffffff1f 40%, transparent 65%),
+    radial-gradient(130% 130% at 24% 22%, transparent 0%, transparent 40%, #3b2470 52%, #1d0f3dd9 62%, #0d0620f2 76%, #07030f 92%) !important;
+  mix-blend-mode: normal; opacity: 1; }
+.universe-map .service-sun.agi-planet .globe-shade {
+  background: radial-gradient(50% 50% at 30% 27%, #ffffff73 0%, #ffffff1a 45%, transparent 70%),
+    radial-gradient(100% 100% at 26% 24%, transparent 0%, transparent 46%, #2e1a5ccc 60%, #12082af0 74%, #05020c 90%) !important; }
+/* Home planets: names only (no "Coming soon" or use-case count pills) */
+.universe-map .universe-world .family-count { display: none !important; }
+/* Home: softer pink glow behind the AGI globe; no outline around the globe */
+.family-map.universe-map::before { animation: none !important; opacity: .35 !important; }
+.universe-map .service-sun.agi-planet { box-shadow: none !important; }
+/* Home: planet name sits just under the planet */
+.universe-map .universe-world .family-name { margin-top: -14px !important; position: relative; z-index: 2; }
+/* Half-dark planets: a day side facing AGI and a night side turned away; the AGI globe is lit from the upper left */
+.universe-map .universe-world .planet-shade, .universe-map .planet-body.has-spin .planet-shade { mix-blend-mode: normal !important;
+  background: radial-gradient(circle at 50% 50%, transparent 60%, #0000004d 100%),
+    linear-gradient(var(--shade-angle, 135deg), transparent 0%, transparent 42%, #000000a6 52%, #000000e0 62%, #000000f5 78%) !important; }
+.universe-map .universe-world .planet-shade::after { display: none !important; }
+.universe-map .service-sun.agi-planet .globe-shade {
+  background: radial-gradient(50% 50% at 30% 27%, #ffffff66 0%, #ffffff14 45%, transparent 70%),
+    linear-gradient(135deg, transparent 0%, transparent 42%, #1a0d38b3 52%, #0b0518eb 63%, #05020c 80%) !important; }
+/* Home: the name sits on the planet itself */
+.universe-map .universe-world { position: absolute; }
+.universe-map .planet-body { width: 150px !important; height: 122px !important; }
+.universe-map .universe-world .family-name { position: absolute; left: 50%; top: 61px; translate: -50% -50%; margin: 0 !important; z-index: 4; white-space: nowrap;
+  font-size: 12.5px !important; font-weight: 700; letter-spacing: .2px; color: #fff; text-shadow: 0 1px 3px #000, 0 0 10px #000c; pointer-events: none; }
+@media (max-width: 760px) {
+  .universe-map .planet-body { width: 120px !important; height: 98px !important; }
+  .universe-map .universe-world .family-name { top: 49px; font-size: 11px !important; }
+}
+/* Home: cleaner, bigger planets with a softer night side and larger names; wider orbit */
+.family-map.universe-map { width: min(1180px, 100%); }
+.universe-map .planet-body { width: 184px !important; height: 150px !important; }
+.universe-map .universe-world .family-name { top: 75px; font-size: 15px !important; }
+.universe-map .universe-world .planet-shade, .universe-map .planet-body.has-spin .planet-shade {
+  background: radial-gradient(circle at 50% 50%, transparent 66%, #00000033 100%),
+    linear-gradient(var(--shade-angle, 135deg), transparent 0%, transparent 46%, #00000059 58%, #00000099 72%, #000000b3 88%) !important; }
+.universe-map .universe-world .family-planet, .universe-map .planet-body .spin-globe { filter: brightness(1.12) saturate(1.1) !important; }
+@media (max-width: 760px) {
+  .universe-map .planet-body { width: 130px !important; height: 106px !important; }
+  .universe-map .universe-world .family-name { top: 53px; font-size: 12px !important; }
+}
+/* Per-score info buttons: beside each score name; tooltip sits above everything below it */
+#reader-dialog .cx-tile-label { display: inline-flex; align-items: center; justify-content: center; gap: 4px; }
+#reader-dialog .cx-tile-info { width: 18px; height: 18px; }
+#reader-dialog .cx-tile-info svg { width: 13px; height: 13px; }
+#reader-dialog .cx-tile-info .cx-info-tip { left: 50%; translate: -50% -4px; width: 260px; background: #231b2b; z-index: 60; }
+#reader-dialog .cx-tile-info:is(:hover, :focus-visible, .is-open) .cx-info-tip { translate: -50% 0; }
+#reader-dialog .cx-tile:first-child .cx-tile-info .cx-info-tip { left: -40px; translate: 0 -4px; }
+#reader-dialog .cx-tile:first-child .cx-tile-info:is(:hover, :focus-visible, .is-open) .cx-info-tip { translate: 0 0; }
+#reader-dialog .cx-tile:last-child .cx-tile-info .cx-info-tip { left: auto; right: -40px; translate: 0 -4px; }
+#reader-dialog .cx-tile:last-child .cx-tile-info:is(:hover, :focus-visible, .is-open) .cx-info-tip { translate: 0 0; }
+#reader-dialog .cx-tile:has(.cx-tile-info:is(:hover, :focus-visible, .is-open)) { z-index: 60; }
+#detail-overview:has(.cx-tile-info:is(:hover, :focus-visible, .is-open)) { position: relative; z-index: 60; }
+/* Longer names wrap onto two lines on the planet */
+.universe-map .universe-world .family-name { white-space: normal !important; width: 104px; text-align: center; line-height: 1.15; }
+@media (max-width: 760px) { .universe-map .universe-world .family-name { width: 76px; } }
+/* Home planets: realistic Solar System Scope maps; the lighting comes only from the AGI-facing shade layer */
+.universe-map .planet-body.has-spin .spin-globe { background-image: var(--strip) !important; background-size: 200% 100% !important; background-repeat: repeat-x !important; animation: planet-spin var(--spin, 60s) linear infinite !important; filter: none !important; }
+.universe-map .planet-body.has-spin .spin-globe::before { display: none !important; }
+/* Home planets read as spheres: a soft highlight on the side facing AGI, limb darkening at the edge, and a gentle night side */
+.universe-map .universe-world .planet-shade, .universe-map .planet-body.has-spin .planet-shade {
+  background:
+    radial-gradient(38% 38% at var(--lx, 35%) var(--ly, 32%), #ffffff59 0%, #ffffff1a 45%, transparent 100%),
+    radial-gradient(circle at 50% 50%, transparent 0%, transparent 52%, #0000002e 70%, #00000080 88%, #000000b3 100%),
+    linear-gradient(var(--shade-angle, 135deg), transparent 0%, transparent 44%, #00000066 58%, #000000a6 74%, #000000c7 90%) !important;
+  box-shadow: inset 0 0 0 1px #ffffff14, inset 0 -6px 14px #00000059; }
+/* AGI globe: shadow on one side, and the mark stays readable over it (above the shade with a soft light outline) */
+.universe-map .service-sun.agi-planet .sun-mark { position: relative; z-index: 5 !important;
+  filter: drop-shadow(0 0 1px #ffffffe6) drop-shadow(0 0 1px #ffffffe6) drop-shadow(0 0 8px #ffffff99) !important; }
+/* Home planets: smooth sphere lighting (no bevel). The shade matches the globe exactly, with one soft falloff from the lit side */
+.universe-map .universe-world .planet-shade, .universe-map .planet-body.has-spin .planet-shade { width: 62.5% !important; box-shadow: none !important;
+  background:
+    radial-gradient(30% 30% at var(--lx, 35%) var(--ly, 32%), #ffffff40 0%, transparent 100%),
+    radial-gradient(120% 120% at var(--lx, 35%) var(--ly, 32%), transparent 0%, transparent 22%, #00000026 40%, #00000073 60%, #000000b8 80%, #000000d9 100%) !important; }
+/* Home planets: lit like the AGI globe — bright side facing AGI, a clear dark side turned away */
+.universe-map .universe-world .planet-shade, .universe-map .planet-body.has-spin .planet-shade {
+  background:
+    radial-gradient(50% 50% at var(--lx, 30%) var(--ly, 27%), #ffffff4d 0%, #ffffff14 45%, transparent 70%),
+    radial-gradient(circle at 50% 50%, transparent 62%, #00000040 100%),
+    linear-gradient(var(--shade-angle, 135deg), transparent 0%, transparent 42%, #000000a6 54%, #000000e0 66%, #000000f5 82%) !important; }
+/* Curved terminator (sphere-like) instead of a straight cut */
+.universe-map .universe-world .planet-shade, .universe-map .planet-body.has-spin .planet-shade {
+  background:
+    radial-gradient(45% 45% at var(--lx, 30%) var(--ly, 27%), #ffffff47 0%, #ffffff12 50%, transparent 75%),
+    radial-gradient(110% 110% at var(--lx, 30%) var(--ly, 27%), transparent 0%, transparent 50%, #00000099 64%, #000000e0 78%, #000000f7 92%) !important; }
+.universe-map .universe-world .planet-shade, .universe-map .planet-body.has-spin .planet-shade {
+  background:
+    radial-gradient(45% 45% at var(--lx, 30%) var(--ly, 27%), #ffffff47 0%, #ffffff12 50%, transparent 75%),
+    radial-gradient(110% 110% at var(--lx, 30%) var(--ly, 27%), transparent 0%, transparent 36%, #000000a6 52%, #000000e6 66%, #000000fa 84%) !important; }
+.universe-map .planet-glint { display: none; }
+.universe-map .planet-body.is-glinting .planet-glint { display: block; }
+/* Home: planets of uneven sizes */
+.universe-map .universe-world { --ps: 1; }
+.universe-map .universe-world[data-universe="facilities"] { --ps: 1.18; }
+.universe-map .universe-world[data-universe="healthcare"] { --ps: .86; }
+.universe-map .universe-world[data-universe="foods"] { --ps: 1.04; }
+.universe-map .universe-world[data-universe="automotive"] { --ps: .84; }
+.universe-map .planet-body { width: calc(184px * var(--ps)) !important; height: calc(150px * var(--ps)) !important; }
+.universe-map .universe-world .family-name { top: calc(75px * var(--ps)); width: calc(104px * var(--ps)); font-size: calc(13px + 2px * var(--ps)) !important; }
+@media (max-width: 760px) {
+  .universe-map .planet-body { width: calc(130px * var(--ps)) !important; height: calc(106px * var(--ps)) !important; }
+  .universe-map .universe-world .family-name { top: calc(53px * var(--ps)); width: calc(76px * var(--ps)); font-size: calc(10px + 2px * var(--ps)) !important; }
+}
+/* AGI centre as the sun: a turning solar surface, limb darkening at the edge and a warm corona */
+.universe-map .service-sun.agi-planet { background: #ff9a2e !important; box-shadow: 0 0 40px 6px #ffb34766, 0 0 110px 30px #ff8a1f33 !important; }
+.universe-map .service-sun.agi-planet::before { display: none !important; }
+.universe-map .service-sun.agi-planet .spin-globe { opacity: 1 !important; mix-blend-mode: normal !important; filter: saturate(1.1) brightness(1.05) !important;
+  background-image: var(--strip) !important; background-size: 200% 100% !important; background-repeat: repeat-x !important; animation: planet-spin var(--spin, 160s) linear infinite !important; }
+.universe-map .service-sun.agi-planet .spin-globe::before { display: none !important; }
+.universe-map .service-sun.agi-planet .globe-shade { background: radial-gradient(circle at 50% 50%, #fff3c41a 0%, transparent 45%, #b8400026 72%, #7a200066 92%, #5a1500a6 100%) !important; }
+.universe-map .agi-ring { border-color: #ffe2b0cc; box-shadow: 0 0 6px #ffc76b80, inset 0 0 6px #ffc76b4d; }
+.family-map.universe-map::before { background: radial-gradient(ellipse at center, #ff9a2e26, transparent 60%) !important; opacity: .6 !important; }
+/* Sun: punchier granulated surface, white-hot centre, deep orange-red limb, soft corona */
+.universe-map .service-sun.agi-planet .spin-globe { filter: contrast(1.45) saturate(1.35) brightness(1.08) !important; }
+.universe-map .service-sun.agi-planet .globe-shade { mix-blend-mode: normal !important;
+  background:
+    radial-gradient(circle at 50% 50%, #fff7d659 0%, #ffe8a026 28%, transparent 50%),
+    radial-gradient(circle at 50% 50%, transparent 55%, #ff6a0026 70%, #d0300066 84%, #8a1400b3 96%, #5a0c00d9 100%) !important; }
+.universe-map .service-sun.agi-planet .globe-shade::after { content: ''; position: absolute; inset: 0; border-radius: 50%; mix-blend-mode: overlay;
+  background: radial-gradient(circle at 50% 50%, #fff3b0 0%, #ffb02e 55%, #e0480a 100%); opacity: .55; }
+.universe-map .service-sun.agi-planet { box-shadow: 0 0 18px 2px #ffd27a99, 0 0 50px 10px #ff9a2e59, 0 0 120px 36px #ff6a1a26 !important; }
+/* Sun: no ring */
+.universe-map .family-centre > span.agi-ring { display: none !important; }
+/* AGI centre as a golden moon: amber lunar surface, lit from the left, falling into deep shadow on the right */
+.universe-map .service-sun.agi-planet { background: #1a1408 !important; box-shadow: none !important; }
+.universe-map .service-sun.agi-planet .spin-globe { filter: sepia(.85) saturate(1.5) hue-rotate(-8deg) brightness(.95) contrast(1.15) !important; }
+.universe-map .service-sun.agi-planet .globe-shade { background:
+    radial-gradient(60% 60% at 32% 40%, #ffdc8a1f 0%, transparent 70%),
+    radial-gradient(115% 115% at 22% 42%, transparent 0%, transparent 44%, #0a060299 58%, #050301e6 70%, #020100 84%) !important; }
+.universe-map .service-sun.agi-planet .globe-shade::after { display: none !important; }
+.family-map.universe-map::before { opacity: .25 !important; }
+.universe-map .service-sun.agi-planet .globe-shade { background:
+    radial-gradient(circle farthest-side at 30% 42%, #ffdc8a1a 0%, transparent 80%),
+    radial-gradient(circle farthest-corner at 20% 45%, transparent 0%, transparent 48%, #0a0602a6 62%, #050301eb 74%, #020100 88%) !important; }
+/* Coming-soon business areas: a plain grey full moon */
+.universe-map .universe-world.is-soon .planet-body .spin-globe { filter: grayscale(1) contrast(1.1) brightness(1.05) !important; }
+.universe-map .universe-world.is-soon { --world-glow: #b8b8c4; }
+/* Golden moon in the middle turns visibly */
+.universe-map .service-sun.agi-planet .spin-globe { animation-duration: 36s !important; }
+.universe-map .universe-world[data-universe="facilities"] { --ps: .96; }
+.universe-map .universe-world[data-universe="foods"] { --ps: 1.2; }
+/* Home: no orbit ring — planets drift around AGI on their own */
+.universe-map .family-track, .universe-map .orbit-comet, .universe-map .orbit-comet-head { display: none !important; }
+/* Home: faint, uneven orbit rings (one per business area); the comet stays off */
+.universe-map .family-track { display: inline !important; stroke-opacity: .13 !important; stroke-width: 1 !important; stroke: #d9cfe6 !important; }
+.universe-map .service-sun.agi-planet .spin-globe { animation-duration: 24s !important; }
+.universe-map .universe-world[data-universe="automotive"] { --ps: 1.02; }
+/* Family and use-case planets: lit by the centre globe like the home page — the shadow turns as they orbit */
+.family-world .spin-globe, .usecase-moon .spin-globe { background-image: var(--strip) !important; background-size: 200% 100% !important; background-repeat: repeat-x !important; animation: planet-spin var(--spin, 60s) linear infinite !important; }
+.family-world .spin-globe::before, .usecase-moon .spin-globe::before { display: none !important; }
+.family-world .globe-wrap::after { content: ''; position: absolute; left: 50%; top: 50%; width: 62.5%; aspect-ratio: 1; translate: -50% -50%; border-radius: 50%; pointer-events: none; z-index: 2;
+  background:
+    radial-gradient(circle farthest-side at var(--lx, 30%) var(--ly, 27%), #ffffff40 0%, #ffffff0f 45%, transparent 75%),
+    radial-gradient(circle farthest-corner at var(--lx, 30%) var(--ly, 27%), transparent 0%, transparent 46%, #000000a6 62%, #000000e6 76%, #000000fa 90%); }
+.usecase-moon .moon-wrap .moon-shade { background:
+    radial-gradient(circle farthest-side at var(--lx, 30%) var(--ly, 27%), #ffffff40 0%, #ffffff0f 45%, transparent 75%),
+    radial-gradient(circle farthest-corner at var(--lx, 30%) var(--ly, 27%), transparent 0%, transparent 46%, #000000a6 62%, #000000e6 76%, #000000fa 90%) !important; mix-blend-mode: normal !important; }
+.universe-map .family-track { stroke-opacity: .08 !important; }
+/* Home: natural orbit rings — faint at the back, brighter in front, softly blurred */
+.universe-map .family-track { stroke: url(#orbit-depth) !important; stroke-opacity: 1 !important; stroke-width: 1.2 !important; filter: url(#orbit-soft); }
+/* Home: tiny unnamed planets on their own drifting orbits */
+.universe-map .mini-planet { position: absolute; left: 0; top: 0; aspect-ratio: 1; border-radius: 50%; translate: 0 0; transform: translate(-50%, -50%); pointer-events: none;
+  background:
+    radial-gradient(circle farthest-corner at var(--lx, 30%) var(--ly, 30%), transparent 0%, transparent 42%, #000000b3 62%, #000000f2 82%),
+    var(--strip) 0 0 / 200% 100% repeat-x;
+  box-shadow: 0 0 6px #ffffff14; opacity: .9; }
+@media (prefers-reduced-motion: reduce) { .universe-map .mini-planet { opacity: .7; } }
+/* Tiny planets pass behind the AGI globe on the far side and in front on the near side */
+.universe-map .family-centre { z-index: 2; }
+/* Home: big AGI globe; small planets with their name and status (Coming soon / use-case count) beneath */
+.universe-map .service-sun { width: 260px !important; }
+.universe-map .family-centre { --agi: 260px; }
+.universe-map .planet-body { width: calc(118px * var(--ps)) !important; height: calc(96px * var(--ps)) !important; }
+.universe-map .universe-world { display: flex; flex-direction: column; align-items: center; }
+.universe-map .universe-world .family-name { position: static !important; translate: none !important; width: auto !important; white-space: nowrap !important; margin-top: -6px !important;
+  font-size: 14px !important; font-weight: 600; text-shadow: 0 1px 8px #000; }
+.universe-map .universe-world .family-count { display: inline-flex !important; margin-top: 5px !important; padding: 2px 9px; font-size: 10.5px !important; }
+.universe-map .universe-world.is-soon .family-count { color: #c9c2d2; background: #ffffff12; box-shadow: inset 0 0 0 1px #ffffff26; }
+@media (max-width: 760px) {
+  .universe-map .service-sun { width: 170px !important; } .universe-map .family-centre { --agi: 170px; }
+  .universe-map .planet-body { width: calc(86px * var(--ps)) !important; height: calc(70px * var(--ps)) !important; }
+  .universe-map .universe-world .family-name { font-size: 12px !important; }
+}
+.universe-map .service-sun.agi-planet .spin-globe { animation-duration: 40s !important; }
+/* Home: no orbit lines */
+.universe-map .family-track { display: none !important; }
+/* Other pages: uneven planet sizes (grow upward so names stay clear) and fainter orbit rings */
+.family-world .globe-wrap, .usecase-moon .moon-wrap { scale: var(--ps, 1); transform-origin: 50% 85%; }
+.family-map:not(.universe-map) .family-track { stroke-opacity: .09 !important; }
+:root .case-orbit-map .family-track, :root .case-orbit-map .family-track[data-orbit-maturity] { stroke-opacity: .1 !important; opacity: .55 !important; }
+/* Star dots around every view (static, very slow drift; no twinkle) */
+#starfield { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: -1; pointer-events: none; }
+#starfield .starfield-mid { animation: star-drift 240s linear infinite alternate; }
+#starfield .starfield-near { animation: star-drift 160s linear infinite alternate-reverse; }
+@keyframes star-drift { from { transform: translate(0, 0); } to { transform: translate(-14px, 8px); } }
+.stars-paused #starfield g { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) { #starfield g { animation: none; } }
+/* AGI mark wrapped onto the sphere (bent by the sphere-wrap filter), sitting on the surface under the light and shade */
+.universe-map .service-sun.agi-planet .agi-mark-wrap { position: absolute; inset: 0; z-index: 1; display: grid; place-items: center; border-radius: 50%; filter: url(#sphere-wrap); pointer-events: none; }
+.universe-map .service-sun.agi-planet .agi-mark-wrap .sun-mark { width: 54% !important; height: 54% !important; z-index: auto !important; animation: none;
+  filter: drop-shadow(0 0 1px #ffffffcc) drop-shadow(0 0 5px #ffffff73) !important; }
+.svg-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+.universe-map .service-sun.agi-planet .agi-mark-wrap .sun-mark { filter: none !important; }

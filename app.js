@@ -145,6 +145,13 @@
     window.scrollTo({ top: 0, behavior: 'auto' });
     zoomFromPlanet(byId('solar-system'), origin, true);
   }
+  // Score bands from the prioritisation workbook. High starts at the gate cut-off; colours: High = green, Medium = orange, Low = red.
+  window.AtlasScoring = {
+    rubricBand: (value, cut) => value >= 3.5 ? { band: 'High', label: 'Very high' } : value >= cut ? { band: 'High', label: 'High' }
+      : value >= 1.5 ? { band: 'Medium', label: 'Moderate' } : { band: 'Low', label: 'Low' },
+    categoryBand: category => ({ band: { 'Quick win': 'High', 'Long-term invest': 'Medium', 'Consider for pilot': 'Medium', 'Deprioritise': 'Low' }[category] || 'Medium', label: category || 'Not scored' }),
+  };
+  const scoreTips = {"maturity": "How proven the technology is: 1 early stage, 2 pilots only, 3 scaling, 4 established. High from 3.", "priority": "Viability × feasibility, out of 16. The label is the category: Quick win (high value, ready now), Long-term invest (high value, not ready yet), Consider for pilot (ready, value unproven), Deprioritise (low on both).", "viability-service": "Business value, 1–4: the average of revenue, client value and experience, resilience, and digital, data and AI. High from 2.5.", "viability-internal": "Business value, 1–4: the average of cost and efficiency, resilience, workforce, and digital, data and AI. High from 2.5.", "feasibility": "How ready AGFS is to build it today, 1–4: the average of strategic alignment, adoption, technical complexity, technology maturity and data readiness. High from 2.6."};
   // One delegated preview follows live planets without changing source records or click targets.
   const preview = el('aside', 'planet-preview');
   preview.id = 'planet-preview'; preview.setAttribute('role', 'dialog'); preview.setAttribute('aria-modal', 'false'); preview.setAttribute('aria-labelledby', 'preview-title'); preview.hidden = true;
@@ -204,7 +211,7 @@
     else { axis = 'y'; a = { x: sphere.x, y: sphere.y - sphere.r }; b = { x: clampX(sphere.x), y: card.bottom }; }
     // The connector takes the planet's colour: a use case's maturity, a family's colour, or the business area's tint.
     const stageTone = { Established: '#f2b84b', Scaling: '#e24bc0', Emerging: '#3fd6c4' }[target.dataset.maturity];
-    const areaTone = { facilities: '#b58cf0', healthcare: '#3fbf7f' }[target.dataset.universe];
+    const areaTone = { facilities: '#b58cf0', healthcare: '#3fbf7f', foods: '#f0a24b', automotive: '#5aa9ff' }[target.dataset.universe];
     const tone = stageTone || areaTone || target.style.getPropertyValue('--family-colour').trim();
     if (tone) tether.style.setProperty('--page-primary-button', tone); else tether.style.removeProperty('--page-primary-button');
     setCurve(tether, a, b, axis);
@@ -286,11 +293,11 @@
       preview.append(el('p', 'preview-description', lead));
       const p = record.prioritisation || {};
       const number = value => new Intl.NumberFormat('en-GB', { maximumFractionDigits: 2 }).format(value);
-      const band = fraction => fraction >= .5 ? 'High' : fraction >= .25 ? 'Medium' : 'Low';
+      const { rubricBand, categoryBand } = window.AtlasScoring;
       const rows = el('dl', 'preview-scores');
-      [['Priority', p.priorityScore, 16], ['Viability', p.viability, 4]].forEach(([label, raw, maximum]) => {
+      [['Priority', p.priorityScore, 16, () => categoryBand(p.category)], ['Viability', p.viability, 4, value => rubricBand(value, 2.5)]].forEach(([label, raw, maximum, rate]) => {
         const scored = typeof raw === 'number';
-        const row = el('div', 'preview-score'); if (scored) row.dataset.band = band(raw / maximum);
+        const row = el('div', 'preview-score'); if (scored) row.dataset.band = rate(raw).band;
         const figure = el('dd', ''); figure.append(el('span', '', scored ? number(raw) : '–'), el('span', 'preview-max', scored ? ` / ${maximum}` : ''));
         row.append(el('dt', '', label), figure); rows.append(row);
       });
@@ -316,7 +323,12 @@
     }
     preview.hidden = false; target.setAttribute('aria-describedby', preview.id); target.setAttribute('aria-controls', preview.id); target.setAttribute('aria-expanded', 'true');
     document.body.classList.add('planet-preview-open');
-    const bounds = target.getBoundingClientRect();
+    let bounds = target.getBoundingClientRect();
+    // Home planets: measure from the sphere itself (their labels make the button wider), so the card sits close.
+    if (target.classList.contains('universe-world')) {
+      const sphere = sphereOf(target), reach = sphere.r + 34;
+      bounds = { left: sphere.x - reach, right: sphere.x + reach, top: bounds.top, bottom: bounds.bottom, width: reach * 2, height: bounds.height };
+    }
     preview.style.maxHeight = '';
     const box = preview.getBoundingClientRect();
     const margin = 8;
@@ -478,7 +490,8 @@
   }
   function renderBreadcrumb() {
     const collectionName = state.collection === 'internal' ? 'Internal' : 'Service';
-    const levels = [{ label: universe.centre.name, href: '#/', title: universe.centre.fullName }];
+    // The trail starts at the business area; the Al Ghurair logo in the header returns to the home view.
+    const levels = [];
     if (state.view !== 'universe') {
       levels.push({ label: 'Facilities', href: '#/facilities' }, { label: collectionName, href: `#/facilities/${state.collection}` });
       if (state.family) levels.push({ label: state.family.label, href: routeFor() });
@@ -705,7 +718,7 @@
       const step = el('div', 'cx-step');
       // Step card: an icon chosen from the step's wording, a "STEP n" chip, then the text.
       const stepNumber = (match[1].match(/\d+/) || [String(++stepIndex)])[0];
-      const copy = match[2].trim();
+      const raw = match[2].trim(), copy = raw.charAt(0).toLocaleUpperCase('en-GB') + raw.slice(1); // each step starts with a capital
       const badge = el('span', 'cx-step-icon'); badge.setAttribute('aria-hidden', 'true'); badge.append(icon(stepIcon(copy)));
       const node = el('span', 'cx-step-node'); node.setAttribute('aria-hidden', 'true');
       node.append(el('small', 'cx-step-word', 'Step'), el('strong', 'cx-step-num', stepNumber));
@@ -768,40 +781,51 @@
       }
       return svg;
     };
-    const tile = (label, valueText, maximum, band, svg, ariaLabel, title) => {
+    const tile = (label, valueText, maximum, band, svg, ariaLabel, title, badge) => {
       const card = el('div', 'cx-tile'); card.setAttribute('role', 'listitem'); card.dataset.score = label.toLowerCase();
       if (band) card.dataset.band = band;
       const dial = el('div', 'cx-tile-dial');
       const value = el('span', 'cx-tile-value'); value.append(el('strong', '', valueText), el('small', '', maximum ? `of ${maximum}` : ''));
       dial.append(svg, value);
-      card.append(dial, el('span', 'cx-tile-label', label), el('span', 'cx-tile-band', band ? bandText[band] : 'Not scored'));
+      // Each score explains itself through a small info button next to its name.
+      const labelNode = el('span', 'cx-tile-label', label);
+      const tipKey = { 'Technology maturity': 'maturity', Priority: 'priority', Feasibility: 'feasibility', Viability: `viability-${record.collection}` }[label];
+      if (scoreTips[tipKey]) {
+        const info = el('button', 'cx-info cx-tile-info'); info.type = 'button'; info.setAttribute('aria-label', `About ${label}`);
+        const tip = el('span', 'cx-info-tip', scoreTips[tipKey]); tip.setAttribute('role', 'tooltip'); tip.id = `cx-tip-${tipKey}`;
+        info.setAttribute('aria-describedby', tip.id); info.append(icon('info'), tip);
+        info.addEventListener('click', event => { event.stopPropagation(); document.querySelectorAll('.cx-tile-info.is-open').forEach(other => other !== info && other.classList.remove('is-open')); info.classList.toggle('is-open'); });
+        info.addEventListener('keydown', event => { if (event.key === 'Escape') { event.stopPropagation(); info.classList.remove('is-open'); info.blur(); } });
+        labelNode.append(info);
+      }
+      card.append(dial, labelNode, el('span', 'cx-tile-band', badge || (band ? bandText[band] : 'Not scored')));
       card.setAttribute('aria-label', ariaLabel); // no hover tooltip: the band and 'How to read the scores' explain it
       return card;
     };
-    const bandOf = fraction => fraction >= .5 ? 'High' : fraction >= .25 ? 'Medium' : 'Low';
-    const bandRule = 'Low below 25%, Moderate 25% to below 50%, Strong 50% or above';
-    const scoreTile = (label, raw, maximum, hint) => {
+    // Bands follow the prioritisation workbook (Rubric notes and Methodology tabs), not a percentage of the maximum:
+    // 1–4 scores read Low / Moderate / High / Very high, where High starts at the gate cut-off
+    // (viability 2.5, feasibility 2.6, maturity 3). Priority carries the workbook category.
+    const { rubricBand, categoryBand } = window.AtlasScoring;
+    const scoreTile = (label, raw, maximum, rate) => {
       const scored = typeof raw === 'number' && Number.isFinite(raw);
       const fraction = scored ? Math.max(0, Math.min(1, raw / maximum)) : 0;
-      const band = scored ? bandOf(fraction) : null;
-      const card = tile(label, scored ? score(raw) : '–', scored ? maximum : '', band, gauge(fraction, band),
-        scored ? `${label}: ${score(raw)} out of ${maximum}, ${bandText[band]}` : `${label}: not scored`,
-        scored ? `${hint}. ${bandText[band]}: ${bandRule}.` : 'Not scored');
+      const rating = scored ? rate(raw) : null;
+      const card = tile(label, scored ? score(raw) : '–', scored ? maximum : '', rating?.band || null, gauge(fraction, rating?.band),
+        scored ? `${label}: ${score(raw)} out of ${maximum}, ${rating.label}` : `${label}: not scored`, '', rating?.label);
       if (!scored) card.dataset.unscored = 'true';
       return card;
     };
-    // Maturity follows the same percentage rule; the stage name sits in the label.
     const maturityScored = typeof record.maturityScore === 'number' && Number.isFinite(record.maturityScore);
     const maturityFraction = maturityScored ? Math.max(0, Math.min(1, record.maturityScore / 4)) : 0;
-    const maturityBand = maturityScored ? bandOf(maturityFraction) : null;
-    const maturityTile = tile('Maturity', maturityScored ? String(record.maturityScore) : '–', 4, maturityBand, gauge(maturityFraction, maturityBand),
-      maturityScored ? `Maturity: ${record.maturity}, ${record.maturityScore} out of 4, ${bandText[maturityBand]}. ${record.maturityExplanation || ''}` : 'Maturity: not scored',
-      [record.maturityExplanation, maturityScored ? `${bandText[maturityBand]}: ${bandRule}.` : ''].filter(Boolean).join(' '));
+    const maturityRating = maturityScored ? rubricBand(record.maturityScore, 3) : null;
+    const maturityTile = tile('Technology maturity', maturityScored ? String(record.maturityScore) : '–', 4, maturityRating?.band || null, gauge(maturityFraction, maturityRating?.band),
+      maturityScored ? `Technology maturity: ${record.maturity}, ${record.maturityScore} out of 4, ${maturityRating.label}. ${record.maturityExplanation || ''}` : 'Technology maturity: not scored',
+      '', maturityRating?.label);
     const tiles = [
       maturityTile,
-      scoreTile('Priority', priority.priorityScore, 16, 'Viability × Feasibility, out of 16'),
-      scoreTile('Viability', priority.viability, 4, 'Out of 4'),
-      scoreTile('Feasibility', priority.feasibility, 4, 'Out of 4')
+      scoreTile('Priority', priority.priorityScore, 16, () => categoryBand(priority.category)),
+      scoreTile('Viability', priority.viability, 4, value => rubricBand(value, 2.5)),
+      scoreTile('Feasibility', priority.feasibility, 4, value => rubricBand(value, 2.6))
     ];
     const rankScored = typeof priority.rank === 'number' && Number.isFinite(priority.rank);
     const rank = byId('detail-rank');
@@ -815,7 +839,7 @@
     maturityChip.replaceChildren(meter, document.createTextNode(record.maturity));
     maturityChip.setAttribute('aria-label', `Maturity: ${record.maturity}, score ${record.maturityScore} of 4`);
     byId('detail-service-group').hidden = !record.rawServiceGroup;
-    text('score-guide-text', 'Each gauge fills in proportion to the score as a percentage of its maximum, and every tile uses the same colour rule: Low (grey-red) below 25%, Moderate (orange) 25% to below 50%, Strong (green) 50% or above. Maturity is out of 4. Viability and Feasibility are out of 4; Priority is their product, out of 16. These display bands summarise the existing scores; they are not recommendations. Rank is the research ordering within its collection: 1 is highest.');
+    text('score-guide-text', 'Technology maturity: how proven the technology is (1 early stage, 2 pilots only, 3 scaling, 4 established). Viability: the business value, the average of four value drivers. Feasibility: how ready AGFS is to build it today, the average of strategic alignment, adoption, technical complexity, technology maturity and data readiness. Each is scored 1–4: High from 2.5 for viability and 2.6 for feasibility, Very high from 3.5. Priority is viability × feasibility (out of 16) and shows the category: Quick win (high value, ready now), Long-term invest (high value, not ready yet), Consider for pilot (ready, value unproven), Deprioritise (low on both). Rank 1 is highest. Scores are analyst judgement, to be validated with AGFS.');
     const index = filtered.findIndex(item => item.id === id);
     text('detail-index', index >= 0 ? `${index + 1} / ${filtered.length}` : '–');
     byId('case-prev').disabled = index <= 0;
@@ -881,20 +905,9 @@
       lead.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); toggle(); } });
     });
   }
-  // "How to read the scores" becomes an info icon beside the Assessment heading, with a short guide on hover/focus/tap.
+  // Score info buttons (one per tile) close when tapping anywhere else.
   {
-    const head = document.querySelector('#detail-overview .cx-assess-head h3');
-    if (head && !head.querySelector('.cx-info')) {
-      const info = el('button', 'cx-info'); info.type = 'button';
-      info.setAttribute('aria-label', 'How to read the scores'); info.setAttribute('aria-describedby', 'cx-info-tip');
-      info.append(icon('info'));
-      const tip = el('span', 'cx-info-tip', 'Each gauge shows the score against its maximum. Strong (green) is 50% or more, Moderate (orange) 25–50%, Low (red) under 25%. Maturity, Viability and Feasibility are out of 4; Priority is Viability × Feasibility, out of 16. Rank 1 is the highest.');
-      tip.id = 'cx-info-tip'; tip.setAttribute('role', 'tooltip');
-      info.addEventListener('click', event => { event.stopPropagation(); info.classList.toggle('is-open'); });
-      document.addEventListener('click', () => info.classList.remove('is-open'));
-      info.addEventListener('keydown', event => { if (event.key === 'Escape') { info.classList.remove('is-open'); info.blur(); } });
-      info.append(tip); head.append(info);
-    }
+    document.addEventListener('click', () => document.querySelectorAll('.cx-tile-info.is-open').forEach(info => info.classList.remove('is-open')));
   }
   // The section tabs only appear when the card's content needs scrolling; otherwise everything is already in view.
   {

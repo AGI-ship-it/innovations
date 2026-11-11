@@ -66,7 +66,11 @@
   };
   const clear = (a, b, gap = 10) => Math.abs(a.x - b.x) >= (a.width + b.width) / 2 + gap || Math.abs(a.y - b.y) >= (a.height + b.height) / 2 + gap;
   function point(item, ring, angle, centre) {
-    return { ...item, angle, x: centre.x + Math.cos(angle) * ring.rx, y: centre.y + Math.sin(angle) * ring.ry };
+    const ox = Math.cos(angle) * ring.rx, oy = Math.sin(angle) * ring.ry, shift = ring.shift || 0;
+    if (!ring.tilt) return { ...item, angle, x: centre.x + shift + ox, y: centre.y + oy };
+    // A tilted (and optionally off-centre) orbit: rotate the ellipse point around its own centre.
+    const c = Math.cos(ring.tilt), s = Math.sin(ring.tilt);
+    return { ...item, angle, x: centre.x + shift + ox * c - oy * s, y: centre.y + ox * s + oy * c };
   }
   // Preserve assigned tracks and grow vertical room only when labels need it.
   // Case tracks encode maturity; overview tracks are decorative.
@@ -117,6 +121,8 @@
       const ring = layout.rings[node.ring];
       // Evenly spread views orbit at one speed so their spacing holds; others drift per ring.
       const delta = Math.min(seconds, .05) * Math.PI * 2 / (layout.uniform ? 300 : 260 + node.ring * 80);
+      // The universe's planets travel together at one speed, so their spacing holds without collision checks.
+      if (layout.together) { Object.assign(node, point(node, ring, node.angle + delta, layout.centre)); return; }
       // Check the whole short arc, preserving readable upright hit targets.
       for (const fraction of [1, .5, .2]) {
         const candidate = point(node, ring, node.angle + delta * fraction, layout.centre);
@@ -128,6 +134,30 @@
     return nodes;
   }
   window.FamilyAtlas = { families, key, label, look, spinGlobe, maturityDay, stages, arrange, advance };
+  // Builds (once) an SVG filter that maps a flat image onto the front of a sphere. Sampling moves outward by
+  // asin(n) − n per axis, so the image stays true at the centre and compresses toward the rim.
+  function ensureSphereWrapFilter() {
+    if (document.getElementById('sphere-wrap')) return;
+    const N = 512, canvas = document.createElement('canvas'); canvas.width = canvas.height = N;
+    const ctx = canvas.getContext('2d'), image = ctx.createImageData(N, N), data = image.data, S = .6;
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+      const nx = (x + .5) / N * 2 - 1, ny = (y + .5) / N * 2 - 1, i = (y * N + x) * 4;
+      let r = 128, g = 128;
+      if (nx * nx + ny * ny < 1) {
+        r = Math.round(255 * (.5 + (Math.asin(nx) - nx) * .5 / S));
+        g = Math.round(255 * (.5 + (Math.asin(ny) - ny) * .5 / S));
+      }
+      data[i] = r; data[i + 1] = g; data[i + 2] = 128; data[i + 3] = 255;
+    }
+    ctx.putImageData(image, 0, 0);
+    const holder = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    holder.setAttribute('class', 'svg-defs'); holder.setAttribute('aria-hidden', 'true');
+    holder.innerHTML = `<filter id="sphere-wrap" primitiveUnits="objectBoundingBox" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB">
+      <feImage href="${canvas.toDataURL()}" x="0" y="0" width="1" height="1" preserveAspectRatio="none" result="map"/>
+      <feDisplacementMap in="SourceGraphic" in2="map" scale="${S}" xChannelSelector="R" yChannelSelector="G" result="bent"/>
+      <feGaussianBlur in="bent" stdDeviation=".0022"/></filter>`;
+    document.body.append(holder);
+  }
   // Shared measured geometry keeps overview and case motion on exact tracks.
   function createMap(container, onSelect, { caseMode = false, universe = false, centreLabel = 'Facilities', centreSubLabel = '', domain = '' } = {}) {
     let layout = null, current = [], frame = 0, previous = null, speed = 0, comets = [], cometTime = 0;
@@ -157,24 +187,66 @@
       sun = element('div', 'service-sun facilities-sun');
       const mark = element('img', 'sun-mark');
       mark.src = 'assets/mark-dark.svg'; mark.alt = ''; mark.width = 72; mark.height = 72;
-      sun.append(mark);
+      // The universe's AGI centre is a real turning planet with a lit and a dark side, the mark on top.
+      if (universe) {
+        sun.classList.add('agi-planet');
+        // The mark is wrapped onto the sphere: an SVG displacement filter bends it like a decal on a globe.
+        const wrap = element('span', 'agi-mark-wrap'); wrap.append(mark);
+        sun.append(spinGlobe('assets/planets/solar/2k_moon.jpg', 24), wrap, element('span', 'globe-shade'));
+        ensureSphereWrapFilter();
+      } else sun.append(mark);
     }
     const caption = element('span', 'centre-caption', caseMode || universe ? centreLabel : 'TECHNOLOGY FAMILIES');
     if (centreSubLabel) caption.append(element('small', 'centre-sub', centreSubLabel));
     if (caseMode) caption.hidden = true;
     centre.append(sun, caption);
+    // The AGI globe wears a thin light ring: its back half passes behind the globe, its front half across the middle.
+    if (universe) centre.prepend(element('span', 'agi-ring is-back')), centre.append(element('span', 'agi-ring is-front'));
     const empty = element('p', 'family-empty', 'No technology families in this collection.');
     container.replaceChildren(paths, centre, empty);
+    // Home only: a few tiny unnamed planets drifting on their own orbits (decorative, not interactive).
+    const minis = universe ? [
+      { map: 'assets/planets/solar/2k_mars.jpg', size: 18, reach: .48, tilt: 14, speed: 1.6, angle: .4 },
+      { map: 'assets/planets/solar/2k_neptune.jpg', size: 13, reach: 1.02, tilt: -6, speed: .7, angle: 2.2 },
+      { map: 'assets/planets/solar/2k_moon.jpg', size: 10, reach: .62, tilt: -12, speed: 1.2, angle: 4.1 },
+      { map: 'assets/planets/solar/2k_venus_atmosphere.jpg', size: 15, reach: 1.1, tilt: 9, speed: .55, angle: 5.3 },
+      { map: 'assets/planets/solar/2k_uranus.jpg', size: 12, reach: .84, tilt: 3, speed: .9, angle: 1.1 },
+      { map: 'assets/planets/solar/2k_jupiter.jpg', size: 20, reach: 1.18, tilt: -3, speed: .45, angle: 3.4 },
+    ].map(spec => {
+      const node = element('span', 'mini-planet'); node.setAttribute('aria-hidden', 'true');
+      node.style.setProperty('--strip', `url("${spec.map}")`); node.style.width = `${Math.round(spec.size * 1.6)}px`;
+      container.append(node); return { ...spec, node };
+    }) : [];
+    function moveMinis(elapsed, still) {
+      if (!layout || !minis.length) return;
+      const base = layout.rings.reduce((max, ring) => Math.max(max, ring.rx), 0) || 300;
+      minis.forEach(mini => {
+        if (!still) mini.angle += elapsed * mini.speed * .05;
+        const rx = Math.max(175, base * mini.reach), ry = rx * .4, tilt = mini.tilt * Math.PI / 180;
+        const ox = Math.cos(mini.angle) * rx, oy = Math.sin(mini.angle) * ry;
+        const x = layout.centre.x + ox * Math.cos(tilt) - oy * Math.sin(tilt), y = layout.centre.y + ox * Math.sin(tilt) + oy * Math.cos(tilt);
+        mini.node.style.translate = `${x.toFixed(1)}px ${y.toFixed(1)}px`;
+        const dx = layout.centre.x - x, dy = layout.centre.y - y, length = Math.hypot(dx, dy) || 1;
+        mini.node.style.setProperty('--lx', `${(50 + dx / length * 26).toFixed(0)}%`);
+        mini.node.style.setProperty('--ly', `${(50 + dy / length * 26).toFixed(0)}%`);
+        // Behind the centre globe when passing above it (the far side), in front when below.
+        mini.node.style.zIndex = y < layout.centre.y ? '1' : '3';
+      });
+    }
     function position() {
       if (!layout) return;
       layout.nodes.forEach(node => {
         const button = nodes.get(node.id);
         button.style.translate = `${node.x.toFixed(2)}px ${node.y.toFixed(2)}px`;
-        if (universe) {
-          // Light comes from the AGI globe: the lit side faces the centre, the shadow falls away from it.
+        // Home: a planet above the centre is on the far side (behind the AGI globe); below it, in front.
+        if (universe) button.style.zIndex = node.y < layout.centre.y ? '1' : '3';
+        {
+          // Light comes from the centre globe: the lit side faces it, the shadow falls away — on every orbit view.
           const dx = layout.centre.x - node.x, dy = layout.centre.y - node.y, length = Math.hypot(dx, dy) || 1;
-          button.style.setProperty('--lx', `${(50 + dx / length * 40).toFixed(1)}%`);
-          button.style.setProperty('--ly', `${(50 + dy / length * 40).toFixed(1)}%`);
+          button.style.setProperty('--lx', `${(50 + dx / length * 24).toFixed(1)}%`);
+          button.style.setProperty('--ly', `${(50 + dy / length * 24).toFixed(1)}%`);
+          // Night side points away from AGI: a gradient angle along (−dx, −dy) in CSS terms (0deg = up).
+          button.style.setProperty('--shade-angle', `${(Math.atan2(-dx, dy) * 180 / Math.PI).toFixed(1)}deg`);
         }
         button.dataset.orbitAngle = String(node.angle);
       });
@@ -199,10 +271,34 @@
       const free = items.map(item => ({ ...item, preferred: universe ? item.preferred : undefined }));
       const attempts = [[items, fitHeight, false], [free, fitHeight, false], [items, fitHeight, true], [free, fitHeight, true], [free, 0, true]];
       layout = null; let lastError = null;
-      for (const [set, height, loose, wide] of [...attempts, [free, 0, true, desktop ? 1.5 : 1]]) { try { layout = arrange(set, Math.round(layoutWidth * (wide || 1)), caseMode, height, universe ? 210 : 0, loose); break; } catch (error) { lastError = error; } }
+      for (const [set, height, loose, wide] of [...attempts, [free, 0, true, desktop ? 1.5 : 1]]) { try { layout = arrange(set, Math.round(layoutWidth * (wide || 1)), caseMode, height, universe ? 300 : 0, loose); break; } catch (error) { lastError = error; } }
       if (!layout) { empty.textContent = lastError.message; empty.hidden = false; empty.setAttribute('role', 'alert'); return; }
       empty.hidden = current.length > 0; empty.removeAttribute('role');
-      layout.uniform = caseMode;
+      layout.uniform = caseMode || universe; layout.together = universe;
+      // The universe orbit is drawn a little flatter (more oval); planets are re-placed on it.
+      if (universe) {
+        // Each business area gets its own orbit, uneven and fairly close to AGI (never crossing the centre globe).
+        const base = layout.rings[layout.nodes[0]?.ring ?? 0];
+        // Bigger planets travel close to AGI; smaller ones orbit further out.
+        const reach = { foods: .56, automotive: .67, facilities: .62, healthcare: .72 };
+        const factors = [.64, .76, .7, .82, .67, .79];
+        layout.rings = layout.nodes.map((node, index) => {
+          const rx = Math.min(Math.max(265, base.rx * (reach[node.id] || factors[index % factors.length])), layout.width / 2 - 90);
+          // Slightly different tilts make the orbits cross each other here and there, like a real system.
+          const tilts = [-9, 7, -4, 11, -6, 5];
+          // Mobility & Automotive runs on a flatter orbit that dips behind the AGI globe and comes back out in front.
+          if (node.id === 'automotive') return { rx, ry: 112, tilt: -8 * Math.PI / 180 };
+          return { rx, ry: 210 + (rx - 265) * .5, tilt: tilts[index % tilts.length] * Math.PI / 180 };
+        });
+        // Off-centre orbits: shifting each ring by its extra width makes the rings run together on the left and fan out on the right.
+        const smallest = Math.min(...layout.rings.map(ring => ring.rx));
+        // One extra, empty outer ring for depth.
+        const widest = Math.max(...layout.rings.map(ring => ring.rx));
+        const extraRx = Math.min(widest * 1.12, layout.width / 2 - 20);
+        layout.rings.push({ rx: extraRx, ry: 210 + (extraRx - 265) * .5, tilt: 3 * Math.PI / 180, empty: true });
+        layout.rings.forEach(ring => { ring.shift = (ring.rx - smallest) * .8; });
+        layout.nodes = layout.nodes.map((node, index) => point({ ...node, ring: index }, layout.rings[index], node.angle, layout.centre));
+      }
       container.style.height = `${layout.height}px`;
       // Never scroll: scale the whole system down so it fits the screen's width and the height below the header.
       const room = Math.max(320, window.innerHeight - top - 12);
@@ -217,15 +313,25 @@
       centre.style.top = `${layout.centre.y}px`;
       paths.setAttribute('viewBox', `0 0 ${layout.width} ${layout.height}`);
       // The universe draws only the orbits that carry a planet, keeping the view simple.
-      paths.replaceChildren(...layout.rings.map((ring, index) => (universe && !items.some(item => item.ring === index)) ? null : svgElement('ellipse', {
-        cx: layout.centre.x, cy: layout.centre.y, rx: ring.rx, ry: ring.ry,
+      paths.replaceChildren(...layout.rings.map((ring, index) => (universe && !ring.empty && !layout.nodes.some(node => node.ring === index)) ? null : svgElement('ellipse', {
+        cx: layout.centre.x + (ring.shift || 0), cy: layout.centre.y, rx: ring.rx, ry: ring.ry,
+        ...(ring.tilt ? { transform: `rotate(${(ring.tilt * 180 / Math.PI).toFixed(2)} ${layout.centre.x + (ring.shift || 0)} ${layout.centre.y})` } : {}),
         ...(caseMode ? { 'data-orbit-maturity': stages[index] } : {}), class: `family-track track-${index}`,
       })).filter(Boolean));
+      // Natural orbits: each ring fades toward the back (top) and is brighter in front (bottom), with a soft glow.
+      if (universe) {
+        const defs = svgElement('defs', {});
+        const grad = svgElement('linearGradient', { id: 'orbit-depth', x1: '0', y1: '0', x2: '0', y2: '1' });
+        [['0', '#e4dcf2', '.08'], ['.45', '#ece4f8', '.18'], ['1', '#ffffff', '.42']].forEach(([offset, colour, opacity]) => grad.append(svgElement('stop', { offset, 'stop-color': colour, 'stop-opacity': opacity })));
+        const blur = svgElement('filter', { id: 'orbit-soft', x: '-5%', y: '-5%', width: '110%', height: '110%' });
+        blur.append(svgElement('feGaussianBlur', { stdDeviation: '.6' }));
+        defs.append(grad, blur); paths.prepend(defs);
+      }
       // The universe orbit carries a soft pulse of light that travels around it.
       // A shining comet: layered strokes (long faint tail → short bright core) plus a sparkling head, moved each frame.
       comets = [];
       if (universe) layout.rings.forEach((ring, index) => {
-        if (!items.some(item => item.ring === index)) return;
+        if (!layout.nodes.some(node => node.ring === index)) return;
         const shape = { cx: layout.centre.x, cy: layout.centre.y, rx: ring.rx, ry: ring.ry, pathLength: 1000 };
         // Many stacked strokes, each shorter, thinner and brighter towards the head, blend into one smooth fading tail.
         const steps = 12;
@@ -309,6 +415,8 @@
           const split = stages.map(stage => ({ stage, count: item.records.filter(record => record.maturity === stage).length })).filter(entry => entry.count);
           button.append(element('strong', 'family-name', item.label), element('span', 'family-count', `${item.records.length} ${item.records.length === 1 ? 'use case' : 'use cases'}`), element('span', 'family-stage', split.map(entry => `${entry.count} ${entry.stage}`).join(' · ')));
         }
+        // Family and use-case planets come in uneven sizes (decorative only).
+        if (!universe) button.style.setProperty('--ps', String([1.16, .84, 1.04, .78, 1.1, .9, .82, 1.12, .95][index % 9]));
         button.classList.add('is-entering'); button.style.setProperty('--enter-index', index);
         button.addEventListener('animationend', () => button.classList.remove('is-entering'), { once: true });
         button.addEventListener('click', () => onSelect(item, button));
@@ -352,6 +460,7 @@
         heads.forEach(head => { const d = Math.hypot(head.x - cx, head.y - cy); if (d < near) { near = d; best = head; } });
         const glint = still || !best ? 0 : Math.max(0, 1 - near / (radius * 1.6));
         body.style.setProperty('--glint', (glint * glint * (3 - 2 * glint)).toFixed(3));
+        body.classList.toggle('is-glinting', glint > .01); // the sheen layer exists only while the comet passes
         if (best) {
           body.style.setProperty('--gx', `${(50 + (best.x - cx) / (radius * 2) * 100).toFixed(1)}%`);
           body.style.setProperty('--gy', `${(50 + (best.y - cy) / (radius * 2) * 100).toFixed(1)}%`);
@@ -365,9 +474,10 @@
         || container.querySelector('button:hover, button:focus, details[open]');
       if (layout && !paused) {
         speed += (1 - speed) * (1 - Math.exp(-elapsed / .65));
-        layout.nodes = advance(layout, elapsed * speed * (universe ? 3 : 1)); position();
+        layout.nodes = advance(layout, elapsed * speed * (universe ? 1 : 1)); position();
       } else speed = 0;
       if (universe && comets.length) moveComets(elapsed);
+      if (universe) moveMinis(elapsed, container.closest('[hidden]') || reduced.matches || document.hidden || document.body.classList.contains('stars-paused'));
       frame = requestAnimationFrame(animate);
     }
     frame = requestAnimationFrame(animate);
