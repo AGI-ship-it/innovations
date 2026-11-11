@@ -2854,3 +2854,160 @@ html[dir="rtl"] .card-planet-orb::after { transform: scaleX(-1); }
   -webkit-mask: radial-gradient(circle closest-side, #000c 0%, #000 70%, #0008 100%); mask: radial-gradient(circle closest-side, #000c 0%, #000 70%, #0008 100%);
   animation: pearl-turn 16s linear infinite !important; }
 @keyframes pearl-turn { from { background-position: 0 0; } to { background-position: -200% 0; } }
+
+/* ===== Universe view, refined ===== */
+/* Bigger, bolder names; status as a chip */
+.universe-map .universe-world .family-name { display: block; margin-top: 10px; font-size: 26px; font-weight: 600; letter-spacing: -.3px; color: #fff; text-shadow: 0 2px 16px #000c; }
+.universe-map .universe-world .family-count { display: inline-flex; align-items: center; gap: 7px; margin-top: 10px; padding: 5px 13px; border-radius: 999px; font-size: 13px; font-weight: 500; opacity: 1;
+  color: #eadcff; background: #9b6bff26; box-shadow: inset 0 0 0 1px #9b6bff59; transition: background .25s, box-shadow .25s; }
+.universe-map .universe-world:not(.is-soon) .family-count::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #4fe39a; box-shadow: 0 0 0 0 #4fe39a99; animation: live-dot 2s ease-out infinite; }
+.universe-map .universe-world:not(.is-soon) .family-count::after { content: '→'; font-size: 14px; width: 0; overflow: hidden; opacity: 0; transition: width .25s, opacity .25s; }
+.universe-map .universe-world:not(.is-soon):is(:hover, :focus-visible) .family-count { background: #9b6bff40; box-shadow: inset 0 0 0 1px #b48cffaa, 0 0 18px #9b6bff55; }
+.universe-map .universe-world:not(.is-soon):is(:hover, :focus-visible) .family-count::after { width: 12px; opacity: 1; }
+.universe-map .universe-world.is-soon .family-name { color: #d6cfde; }
+.universe-map .universe-world.is-soon .family-count { color: #cfc6d8 !important; background: #ffffff0f; box-shadow: inset 0 0 0 1px #ffffff1f; }
+/* A soft atmosphere glow in each planet's colour */
+.universe-map .universe-world { --world-glow: #9b6bff; }
+.universe-map .universe-world[data-universe="healthcare"] { --world-glow: #3fbf7f; }
+.universe-map .planet-body::before { content: ''; position: absolute; left: 50%; top: 50%; width: 70%; aspect-ratio: 1; translate: -50% -50%; border-radius: 50%; z-index: -1; pointer-events: none;
+  box-shadow: 0 0 50px 6px color-mix(in srgb, var(--world-glow) 45%, transparent), 0 0 120px 20px color-mix(in srgb, var(--world-glow) 18%, transparent); transition: box-shadow .35s; }
+.universe-map .universe-world:not(.is-soon) .planet-body { transition: transform .35s cubic-bezier(.22,1,.36,1); }
+.universe-map .universe-world:not(.is-soon):is(:hover, :focus-visible) .planet-body { transform: scale(1.05); }
+.universe-map .universe-world:not(.is-soon):is(:hover, :focus-visible) .planet-body::before { box-shadow: 0 0 60px 10px color-mix(in srgb, var(--world-glow) 65%, transparent), 0 0 150px 30px color-mix(in srgb, var(--world-glow) 26%, transparent); }
+.universe-map .universe-world.is-soon .planet-body::before { opacity: .55; }
+/* Orbit: a little brighter with a soft glow, and a pulse of light travelling around it */
+.universe-map .family-track { stroke: #c9a6ff; stroke-opacity: .32; stroke-width: 1.2; filter: drop-shadow(0 0 4px #b48cff66); }
+.orbit-comet { fill: none; stroke: #f3e6ff; stroke-width: 2.2; stroke-linecap: round; stroke-dasharray: 70 930; filter: drop-shadow(0 0 6px #d6b8ff) drop-shadow(0 0 2px #fff);
+  animation: orbit-comet 18s linear infinite; }
+@keyframes orbit-comet { to { stroke-dashoffset: -1000; } }
+.stars-paused .orbit-comet { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) { .orbit-comet { display: none; } }
+html[lang="ar"] .universe-map .universe-world .family-name { letter-spacing: 0; }
+/* No dark halo around the planets: only a soft coloured glow, starting at the sphere's edge */
+.universe-map .planet-body::before { width: 62.5%; box-shadow: 0 0 46px color-mix(in srgb, var(--world-glow) 50%, transparent), 0 0 110px color-mix(in srgb, var(--world-glow) 20%, transparent); background: none; }
+.universe-map .universe-world:not(.is-soon):is(:hover, :focus-visible) .planet-body::before { box-shadow: 0 0 60px color-mix(in srgb, var(--world-glow) 70%, transparent), 0 0 140px color-mix(in srgb, var(--world-glow) 28%, transparent); }
+.universe-map .family-planet, .universe-map .spin-globe { filter: none !important; }
+/* Hover cards: description limited to 4 lines */
+aside.planet-preview .preview-description { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; }
+
+/* Full card: bold headings, tighter rhythm (every element kept) */
+#reader-dialog #detail-title { font-weight: 700 !important; letter-spacing: -.4px; line-height: 1.2; }
+.card-planet-caption strong { font-weight: 700; }
+@media (min-width: 1000px) {
+  #reader-dialog .cx-hero { padding-top: 20px !important; padding-bottom: 2px !important; row-gap: 4px; }
+  #reader-dialog .cx-tabs { padding-top: 4px !important; padding-bottom: 6px !important; }
+  #reader-dialog .cx-tabs button { padding-top: 7px; padding-bottom: 7px; }
+  #reader-dialog .detail-scroll { padding-top: 6px !important; padding-bottom: 16px !important; }
+  #reader-dialog .cx-section { margin-bottom: 12px !important; }
+  #reader-dialog .cx-assess-head, #reader-dialog .cx-section-head { margin-bottom: 8px; }
+  #reader-dialog .cx-tile { padding: 8px 8px 8px !important; gap: 1px; }
+  #reader-dialog .cx-tile-label { margin-top: 2px; }
+  #reader-dialog .cx-guide { margin-top: 6px; }
+  #reader-dialog .cx-lead { margin: 4px 0 8px; }
+  #reader-dialog .cx-timeline { margin-top: 6px; gap: 10px; }
+  #reader-dialog .cx-timeline .cx-step-body { gap: 7px; }
+  #reader-dialog .cx-timeline .cx-step-copy { padding: 11px 14px; line-height: 1.45; }
+  #reader-dialog .cx-flow { margin-top: 10px; }
+  #reader-dialog .cx-flow .cx-result { padding: 11px 16px !important; gap: 8px; }
+  #reader-dialog .cx-flow .cx-result p { line-height: 1.45; }
+  #reader-dialog .cx-value { padding: 12px 18px !important; row-gap: 8px; }
+}
+/* The card hugs its content (centred on screen) instead of filling the full height */
+@media (min-width: 1000px) {
+  #reader-dialog.inspector { height: auto !important; max-height: calc(100dvh - 24px) !important; top: 50% !important; bottom: auto !important; translate: 0 -50%; }
+  #reader-dialog .case-detail { justify-content: flex-start; height: auto; max-height: calc(100dvh - 24px); }
+}
+/* Even spacing in the full card: one rhythm between sections, tabs aligned with content, equal top/bottom padding */
+@media (min-width: 1000px) {
+  #reader-dialog .cx-hero { padding: 26px 30px 6px 30px !important; }
+  #reader-dialog .detail-scroll { margin-left: 0 !important; padding: 0 30px 26px 30px !important; }
+  #reader-dialog .cx-tabs { margin: 0 -30px 14px !important; padding: 8px 30px 8px 30px !important; }
+  #reader-dialog .cx-tabs .tab-glider { margin: 0 !important; }
+  #reader-dialog .cx-section { margin: 0 0 20px !important; }
+  #reader-dialog .cx-section:last-child { margin-bottom: 0 !important; }
+  #reader-dialog .cx-assess-head, #reader-dialog .cx-section-head, #reader-dialog #detail-description-section > .cx-h { margin: 0 0 12px !important; }
+  #reader-dialog .cx-guide { margin: 10px 0 0 !important; }
+  #reader-dialog .cx-lead { margin: 0 0 12px !important; }
+  #reader-dialog .cx-timeline { margin: 0 !important; }
+  #reader-dialog .cx-flow { margin: 16px 0 0 !important; }
+  #reader-dialog .cx-value { margin: 0 !important; }
+}
+/* No case number on the full card: the line shows only the domain */
+#reader-dialog .cx-kicker #detail-number, #reader-dialog .cx-kicker .cx-sep { display: none; }
+#reader-dialog .cx-kicker { color: #c9b8d6; }
+.card-curve .curve-tail { display: inline !important; }
+
+/* Score guide: an info icon by the Assessment heading with a hover/focus/tap tooltip (replaces the "How to read the scores" line) */
+#reader-dialog .cx-guide { display: none !important; }
+#reader-dialog .cx-assess-head h3 { display: inline-flex; align-items: center; gap: 8px; overflow: visible; }
+.cx-info { position: relative; display: inline-grid; place-items: center; width: 20px; height: 20px; padding: 0; border: 0; border-radius: 50%; background: none; color: #a99fb3; cursor: help; text-transform: none; letter-spacing: 0; }
+.cx-info svg { width: 15px; height: 15px; }
+.cx-info:hover, .cx-info:focus-visible, .cx-info.is-open { color: #fff; background: #ffffff14; }
+.cx-info-tip { position: absolute; left: -8px; top: calc(100% + 10px); z-index: 20; width: 300px; padding: 12px 14px; border-radius: 12px; text-align: start;
+  font: 400 12.5px/1.5 'Inter', 'Almarai', sans-serif; letter-spacing: 0; text-transform: none; color: #ece4f3; white-space: normal;
+  background: #241d2bf2; box-shadow: inset 0 0 0 1px #ffffff1f, 0 14px 34px #000a; -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  opacity: 0; translate: 0 -4px; pointer-events: none; transition: opacity .18s, translate .18s; }
+.cx-info:hover .cx-info-tip, .cx-info:focus-visible .cx-info-tip, .cx-info.is-open .cx-info-tip { opacity: 1; translate: 0 0; }
+html[dir="rtl"] .cx-info-tip { left: auto; right: -8px; }
+/* Step connector: softer, more transparent dashed line and dot */
+@media (min-width: 1000px) {
+  #reader-dialog .cx-timeline .cx-step:not(:last-child)::after { border-top-color: color-mix(in srgb, var(--page-primary-button) 32%, transparent) !important; }
+  #reader-dialog .cx-timeline .cx-step:not(:last-child)::before { background: color-mix(in srgb, var(--page-primary-button) 55%, transparent) !important; box-shadow: none !important; }
+}
+/* Section subtitles a little bolder */
+#reader-dialog .cx-h, #reader-dialog .cx-assess-head h3, #reader-dialog .cx-value h3, #reader-dialog .cx-result-head strong { font-weight: 600 !important; color: #d9cde4; }
+[data-theme="light"] #reader-dialog .cx-h, [data-theme="light"] #reader-dialog .cx-assess-head h3 { color: #2a303b; }
+#reader-dialog .is-why .cx-result-head strong { color: #ffb562 !important; }
+#reader-dialog .is-out .cx-result-head strong { color: #4fe39a !important; }
+#reader-dialog .cx-value h3 { color: #ffd1ee; }
+
+/* Steps: the STEP chip sits inside its box; boxes joined by a short dashed link */
+@media (min-width: 1000px) {
+  #reader-dialog .cx-timeline { gap: 18px; align-items: stretch; }
+  #reader-dialog .cx-timeline .cx-step-body { height: 100%; box-sizing: border-box; gap: 10px; padding: 14px 16px 16px !important; border-radius: 16px; background: #ffffff0a !important; }
+  [data-theme="light"] #reader-dialog .cx-timeline .cx-step-body { background: #f3f5f8 !important; }
+  #reader-dialog .cx-timeline .cx-step-copy { padding: 0 !important; background: none !important; }
+  #reader-dialog .cx-timeline .cx-step-node { padding: 3px 11px; }
+  #reader-dialog .cx-timeline .cx-step-node .cx-step-word { font-size: 10px; }
+  #reader-dialog .cx-timeline .cx-step-node .cx-step-num { font-size: 13px; }
+  #reader-dialog .cx-timeline .cx-step:not(:last-child)::after { top: 50% !important; left: 100% !important; right: auto !important; width: 18px !important; }
+  #reader-dialog .cx-timeline .cx-step:not(:last-child)::before { display: none !important; }
+  html[dir="rtl"] #reader-dialog .cx-timeline .cx-step:not(:last-child)::after { left: auto !important; right: 100% !important; }
+}
+:root:root #reader-dialog .case-detail .cx-timeline .cx-step-body { background: #ffffff0a !important; }
+[data-theme="light"]:root #reader-dialog .case-detail .cx-timeline .cx-step-body { background: #f3f5f8 !important; }
+/* Score tiles: the Strong / Moderate / Low chip sits in the tile's top-right corner */
+#reader-dialog .cx-tile { position: relative; }
+#reader-dialog .cx-tile-band { position: absolute; top: 10px; right: 10px; padding: 2px 9px !important; font-size: 10.5px; }
+html[dir="rtl"] #reader-dialog .cx-tile-band { right: auto; left: 10px; }
+@media (min-width: 1000px) { #reader-dialog .cx-tile { padding-bottom: 12px !important; } }
+#reader-dialog .cx-tabs[hidden] { display: none !important; }
+/* More breathing room after every section */
+@media (min-width: 1000px) {
+  #reader-dialog .cx-hero { padding-bottom: 14px !important; }
+  #reader-dialog .cx-section { margin-bottom: 30px !important; }
+  #reader-dialog .cx-section:last-child { margin-bottom: 0 !important; }
+  #reader-dialog .cx-assess-head, #reader-dialog #detail-description-section > .cx-h { margin-bottom: 16px !important; }
+  #reader-dialog .cx-lead { margin-bottom: 18px !important; }
+  #reader-dialog .cx-flow { margin-top: 22px !important; }
+}
+/* Headings sit close to their content; the extra space stays between sections */
+@media (min-width: 1000px) {
+  #reader-dialog .cx-assess-head, #reader-dialog #detail-description-section > .cx-h { margin-bottom: 8px !important; }
+  #reader-dialog .cx-lead { margin-top: 0 !important; margin-bottom: 14px !important; }
+}
+/* Paragraph text in the full card: light weight */
+#reader-dialog :is(.cx-lead, .cx-step-copy, .cx-result p, #detail-value, #detail-description > p) { font-weight: 300 !important; }
+/* Use-case names under planets: wider, at most two lines */
+.case-orbit-map .usecase-moon { width: 220px; }
+.case-orbit-map.is-dense .usecase-moon { width: 190px; }
+.case-orbit-map .usecase-title { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; text-wrap: balance; }
+/* Use-case labels: 16px names, a little air between planet, name and maturity chip */
+.case-orbit-map .usecase-title { font-size: 16px; line-height: 1.3; margin-top: 4px; }
+.case-orbit-map .usecase-maturity { margin-top: 10px !important; }
+.case-orbit-map.is-dense .usecase-title { font-size: 15px; }
+/* Filter menus never push the index sideways: the last menus open right-aligned and the dialog can't scroll horizontally */
+#browse-dialog { overflow-x: hidden; }
+#browse-dialog .ui-select-list { max-width: min(340px, calc(100vw - 48px)); }
+#browse-dialog .browse-filters > :nth-last-child(-n+2) .ui-select-list, #browse-dialog .ui-select:last-of-type .ui-select-list { left: auto; right: 0; }
+html[dir="rtl"] #browse-dialog .browse-filters > :nth-last-child(-n+2) .ui-select-list { right: auto; left: 0; }

@@ -70,19 +70,19 @@
   }
   // Preserve assigned tracks and grow vertical room only when labels need it.
   // Case tracks encode maturity; overview tracks are decorative.
-  function arrange(items, width, caseMode = false, fitHeight = 0, centreSize = 0) {
+  function arrange(items, width, caseMode = false, fitHeight = 0, centreSize = 0, loose = false) {
     const compact = width < 650;
     const maxWidth = Math.max(...items.map(item => item.width), 120);
     const maxHeight = Math.max(...items.map(item => item.height), 90);
     // Orbits scale with how many planets there are: a family of two stays compact; big families use the full width.
-    const reach = compact ? Infinity : 220 + items.length * 52;
+    const reach = compact || loose ? Infinity : 220 + items.length * 52;
     const outerX = Math.max(48, Math.min(width / 2 - maxWidth / 2 - 16, reach));
     // Desktop overview starts at the height left in the first screen; it grows only if labels would collide.
     let height = compact ? Math.max(caseMode ? 1000 : 1260, items.length * 125) : fitHeight ? Math.max(fitHeight, items.length * 40) : Math.max(caseMode ? 720 : 960, items.length * 66);
     const attempts = fitHeight ? 20 : 12, growth = fitHeight ? 1.08 : 1.18;
     for (let attempt = 0; attempt < attempts; attempt++, height *= growth) {
       const centre = { x: width / 2, y: height / 2, width: centreSize || (compact ? (caseMode ? 120 : 78) : 160), height: centreSize || (caseMode ? 180 : compact ? 100 : 160) };
-      const outerY = Math.min(height / 2 - maxHeight / 2 - 44, Math.max(outerX * .5, 150));
+      const outerY = loose ? height / 2 - maxHeight / 2 - 44 : Math.min(height / 2 - maxHeight / 2 - 44, Math.max(outerX * .5, 150));
       // Try a few ring spacings at this height before giving up and growing taller.
       const ringSets = caseMode ? (fitHeight ? [[.62, .81, 1], [.7, .86, 1], [.55, .78, 1], [.48, .74, 1]] : [[.62, .81, 1]]) : fitHeight ? [[.46, .74, 1], [.52, .78, 1], [.4, .7, 1]] : [[.40, .70, 1]];
       for (const set of ringSets) {
@@ -115,7 +115,8 @@
     const nodes = layout.nodes.map(node => ({ ...node }));
     nodes.forEach((node, index) => {
       const ring = layout.rings[node.ring];
-      const delta = Math.min(seconds, .05) * Math.PI * 2 / (260 + node.ring * 80);
+      // Evenly spread views orbit at one speed so their spacing holds; others drift per ring.
+      const delta = Math.min(seconds, .05) * Math.PI * 2 / (layout.uniform ? 300 : 260 + node.ring * 80);
       // Check the whole short arc, preserving readable upright hit targets.
       for (const fraction of [1, .5, .2]) {
         const candidate = point(node, ring, node.angle + delta * fraction, layout.centre);
@@ -183,7 +184,8 @@
       const items = current.map((item, index) => {
         const node = nodes.get(item.id);
         return { id: item.id, ring: caseMode ? stages.indexOf(item.maturity) : universe ? (current.length <= 4 ? 2 : 1 + index % 2) : index % 3, width: node.offsetWidth, height: node.offsetHeight,
-          preferred: universe ? -Math.PI / 2 + (index + .5) / current.length * Math.PI * 2 : undefined };
+          // Universe and family views spread their planets evenly around the centre (two sit left and right).
+          preferred: universe ? -Math.PI / 2 + (index + .5) / current.length * Math.PI * 2 : caseMode ? Math.PI + index / current.length * Math.PI * 2 : undefined };
       });
       const top = container.getBoundingClientRect().top + window.scrollY;
       // The universe is a compact stage; the other views fill the screen height.
@@ -192,9 +194,15 @@
       // Lay out at a comfortable width (galaxies with many planets need room for their labels), then scale to fit.
       const available = universe ? container.clientWidth : container.parentElement.clientWidth;
       const desktop = window.innerWidth > 760 && !universe;
-      const layoutWidth = desktop ? Math.max(available, Math.min(1400, 560 + items.length * 60)) : available;
-      try { layout = arrange(items, layoutWidth, caseMode, fitHeight, universe ? 210 : 0); }
-      catch { try { layout = arrange(items, layoutWidth, caseMode, 0, universe ? 210 : 0); } catch (error) { empty.textContent = error.message; empty.hidden = false; empty.setAttribute('role', 'alert'); return; } }
+      const layoutWidth = desktop ? Math.max(available, Math.min(1400, 560 + items.length * 60), caseMode && items.length > 2 ? 1100 : 0) : available;
+      // Try the preferred even spread first; if the labels don't fit, fall back to free placement, then to a taller layout.
+      const free = items.map(item => ({ ...item, preferred: universe ? item.preferred : undefined }));
+      const attempts = [[items, fitHeight, false], [free, fitHeight, false], [items, fitHeight, true], [free, fitHeight, true], [free, 0, true]];
+      layout = null; let lastError = null;
+      for (const [set, height, loose, wide] of [...attempts, [free, 0, true, desktop ? 1.5 : 1]]) { try { layout = arrange(set, Math.round(layoutWidth * (wide || 1)), caseMode, height, universe ? 210 : 0, loose); break; } catch (error) { lastError = error; } }
+      if (!layout) { empty.textContent = lastError.message; empty.hidden = false; empty.setAttribute('role', 'alert'); return; }
+      empty.hidden = current.length > 0; empty.removeAttribute('role');
+      layout.uniform = caseMode;
       container.style.height = `${layout.height}px`;
       // Never scroll: scale the whole system down so it fits the screen's width and the height below the header.
       const room = Math.max(320, window.innerHeight - top - 12);
@@ -213,6 +221,9 @@
         cx: layout.centre.x, cy: layout.centre.y, rx: ring.rx, ry: ring.ry,
         ...(caseMode ? { 'data-orbit-maturity': stages[index] } : {}), class: `family-track track-${index}`,
       })).filter(Boolean));
+      // The universe orbit carries a soft pulse of light that travels around it.
+      if (universe) layout.rings.forEach((ring, index) => { if (items.some(item => item.ring === index)) paths.append(svgElement('ellipse', {
+        cx: layout.centre.x, cy: layout.centre.y, rx: ring.rx, ry: ring.ry, pathLength: 1000, class: 'orbit-comet' })); });
       items.forEach(item => { nodes.get(item.id).dataset.orbitRing = String(item.ring); });
       container.dataset.orbitGeometry = JSON.stringify(layout);
       position();

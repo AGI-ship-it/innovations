@@ -31,6 +31,8 @@
     'Select a named use case to read its description, scores and value.': 'اختر حالة استخدام لقراءة وصفها وتقييماتها وقيمتها.',
     'Technology family': 'عائلة تقنية', 'Use case': 'حالة استخدام',
     'Scores': 'التقييمات', 'How it works': 'آلية العمل', 'Value realised': 'القيمة المحققة', 'Assessment': 'التقييم', 'How to read the scores': 'كيف تُقرأ التقييمات',
+    'Each gauge shows the score against its maximum. Strong (green) is 50% or more, Moderate (orange) 25–50%, Low (red) under 25%. Maturity, Viability and Feasibility are out of 4; Priority is Viability × Feasibility, out of 16. Rank 1 is the highest.':
+      'يعرض كل مؤشر الدرجة مقارنةً بحدها الأقصى. قوي (أخضر) 50% أو أكثر، متوسط (برتقالي) من 25% إلى 50%، منخفض (أحمر) أقل من 25%. النضج والجدوى وقابلية التنفيذ من 4، والأولوية حاصل ضرب الجدوى في قابلية التنفيذ من 16. الترتيب 1 هو الأعلى.',
     'Reported benchmark': 'معيار مُبلَّغ عنه', 'Rank': 'الترتيب', 'Strong': 'قوي', 'Moderate': 'متوسط', 'Low': 'منخفض', 'Not scored': 'غير مُقيَّم',
     'Maturity': 'النضج', 'Priority': 'الأولوية', 'Viability': 'الجدوى', 'Feasibility': 'قابلية التنفيذ', 'Step': 'خطوة', 'Challenge': 'التحدي', 'Outcome': 'النتيجة',
     'Quick win': 'مكسب سريع', 'Consider for pilot': 'تُدرس للتجربة', 'Long-term invest': 'استثمار طويل الأجل', 'Deprioritise': 'أولوية منخفضة',

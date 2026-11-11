@@ -663,7 +663,17 @@
     const resultStart = record.description.search(/The outputs? (?:is|are) |It is needed because /);
     const process = resultStart < 0 ? record.description : record.description.slice(0, resultStart);
     const results = resultStart < 0 ? '' : record.description.slice(resultStart);
-    const parts = process.split(/(?=Step \d+\s*:)/);
+    let parts = process.split(/(?=Step \d+\s*:)/);
+    // No step markers in the source: keep the first sentence as the intro and split the rest into steps
+    // (by semicolons, otherwise by sentences), so every card shows STEP 1, 2, 3.
+    if (parts.length < 2) {
+      const sentences = process.trim().match(/[^.!?]+[.!?]+(\s+|$)|[^.!?]+$/g) || [process];
+      const lead = sentences.shift().trim(), rest = sentences.join('').trim();
+      let chunks = rest.split(/;\s+/).map(chunk => chunk.trim()).filter(Boolean);
+      if (chunks.length < 2) chunks = (rest.match(/[^.!?]+[.!?]+(\s+|$)|[^.!?]+$/g) || []).map(chunk => chunk.trim()).filter(Boolean);
+      if (chunks.length > 4) chunks = [...chunks.slice(0, 3), chunks.slice(3).join(' ')];
+      if (chunks.length >= 2) parts = [lead + ' ', ...chunks.map((chunk, index) => `Step ${index + 1}: ${chunk.replace(/[;.]\s*$/, '')}.`)];
+    }
     let stepIndex = 0;
     const timeline = el('div', 'cx-timeline');
     description.replaceChildren(...parts.filter(part => part.trim()).map(part => {
@@ -848,6 +858,34 @@
       lead.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); toggle(); } });
     });
   }
+  // "How to read the scores" becomes an info icon beside the Assessment heading, with a short guide on hover/focus/tap.
+  {
+    const head = document.querySelector('#detail-overview .cx-assess-head h3');
+    if (head && !head.querySelector('.cx-info')) {
+      const info = el('button', 'cx-info'); info.type = 'button';
+      info.setAttribute('aria-label', 'How to read the scores'); info.setAttribute('aria-describedby', 'cx-info-tip');
+      info.append(icon('info'));
+      const tip = el('span', 'cx-info-tip', 'Each gauge shows the score against its maximum. Strong (green) is 50% or more, Moderate (orange) 25–50%, Low (red) under 25%. Maturity, Viability and Feasibility are out of 4; Priority is Viability × Feasibility, out of 16. Rank 1 is the highest.');
+      tip.id = 'cx-info-tip'; tip.setAttribute('role', 'tooltip');
+      info.addEventListener('click', event => { event.stopPropagation(); info.classList.toggle('is-open'); });
+      document.addEventListener('click', () => info.classList.remove('is-open'));
+      info.addEventListener('keydown', event => { if (event.key === 'Escape') { info.classList.remove('is-open'); info.blur(); } });
+      info.append(tip); head.append(info);
+    }
+  }
+  // The section tabs only appear when the card's content needs scrolling; otherwise everything is already in view.
+  {
+    const scroller = byId('detail-scroll');
+    const fitCheck = () => requestAnimationFrame(() => {
+      const tabs = document.querySelector('#reader-dialog .cx-tabs');
+      if (!tabs) return;
+      tabs.hidden = false;
+      tabs.hidden = scroller.scrollHeight - scroller.clientHeight <= 2;
+    });
+    new ResizeObserver(fitCheck).observe(scroller);
+    new MutationObserver(fitCheck).observe(byId('case-detail'), { childList: true, subtree: true, characterData: true });
+    window.addEventListener('resize', fitCheck);
+  }
   function stepCase(offset) {
     const index = filtered.findIndex(record => record.id === state.selectedId);
     const next = filtered[index + offset];
@@ -942,7 +980,7 @@
     if (!link.querySelector('.curve-ripple')) [0, 1, 2].forEach(index => { const ring = document.createElementNS(ns, 'circle'); ring.setAttribute('class', 'curve-ripple'); ring.style.animationDelay = `${index * 0.8}s`; link.append(ring); });
     link.querySelectorAll('.curve-ripple').forEach(ring => { ring.setAttribute('cx', a.x); ring.setAttribute('cy', a.y); ring.setAttribute('r', 7); });
     const cardTop = inspector.offsetTop + 70, cardBottom = inspector.offsetTop + inspector.offsetHeight - 40;
-    [['up', a.y - r, Math.max(cardTop, a.y - r - 140)], ['down', a.y + r, Math.min(cardBottom, a.y + r + 160)]].forEach(([dir, from, to]) => {
+    (() => { const box = inspector.getBoundingClientRect(); return [['up', a.y - r, box.top + 34], ['down', a.y + r, box.bottom - 34]]; })().forEach(([dir, from, to]) => {
       const grad = defs.querySelector(`#curve-tail-${dir}`);
       grad.setAttribute('x1', bx); grad.setAttribute('x2', bx); grad.setAttribute('y1', from); grad.setAttribute('y2', to);
       link.querySelector(`.curve-tail.is-${dir}`).setAttribute('d', `M${bx} ${from} L${bx} ${to}`);
