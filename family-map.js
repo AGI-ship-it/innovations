@@ -123,7 +123,11 @@
       // Evenly spread views orbit at one speed so their spacing holds; others drift per ring.
       const delta = Math.min(seconds, .05) * Math.PI * 2 / (layout.uniform ? 300 : 260 + node.ring * 80);
       // The universe's planets travel together at one speed, so their spacing holds without collision checks.
-      if (layout.together) { Object.assign(node, point(node, ring, node.angle + delta, layout.centre)); return; }
+      // Home: each planet keeps its own pace like a real system — inner orbits run faster (Kepler: speed ∝ r^-1.5).
+      if (layout.together) {
+        const inner = Math.min(...layout.rings.map(r => r.rx));
+        Object.assign(node, point(node, ring, node.angle + delta * 1.6 * Math.pow(inner / ring.rx, 1.5), layout.centre)); return;
+      }
       // Check the whole short arc, preserving readable upright hit targets.
       for (const fraction of [1, .5, .2]) {
         const candidate = point(node, ring, node.angle + delta * fraction, layout.centre);
@@ -232,7 +236,7 @@
       if (!layout || !minis.length) return;
       const base = layout.rings.reduce((max, ring) => Math.max(max, ring.rx), 0) || 300;
       minis.forEach(mini => {
-        if (!still) mini.angle += elapsed * mini.speed * .05;
+        if (!still) mini.angle += elapsed * mini.speed * .05 * Math.pow(.6 / mini.reach, 1.5);
         const rx = Math.min(Math.max(175, base * mini.reach), layout.width / 2 - 14), ry = layout.width < 600 ? rx * 1.25 : rx * .4, tilt = mini.tilt * Math.PI / 180;
         const ox = Math.cos(mini.angle) * rx, oy = Math.sin(mini.angle) * ry;
         const x = layout.centre.x + ox * Math.cos(tilt) - oy * Math.sin(tilt), y = layout.centre.y + ox * Math.sin(tilt) + oy * Math.cos(tilt);
@@ -242,6 +246,8 @@
         mini.node.style.setProperty('--ly', `${(50 + dy / length * 26).toFixed(0)}%`);
         // Behind the centre globe when passing above it (the far side), in front when below.
         mini.node.style.zIndex = y < layout.centre.y ? '1' : '3';
+        const depth = (Math.sin(mini.angle) + 1) / 2;
+        mini.node.style.scale = (.7 + depth * .5).toFixed(3); mini.node.style.opacity = (.55 + depth * .4).toFixed(3);
       });
     }
     function position() {
@@ -250,7 +256,13 @@
         const button = nodes.get(node.id);
         button.style.translate = `${node.x.toFixed(2)}px ${node.y.toFixed(2)}px`;
         // Home: a planet above the centre is on the far side (behind the AGI globe); below it, in front.
-        if (universe) button.style.zIndex = node.y < layout.centre.y ? '1' : '3';
+        if (universe) {
+          button.style.zIndex = node.y < layout.centre.y ? '1' : '3';
+          // Perspective: on the far side of the orbit a planet looks smaller and dimmer; on the near side, larger.
+          const depth = (Math.sin(node.angle) + 1) / 2;
+          button.style.scale = (.82 + depth * .3).toFixed(3);
+          button.style.setProperty('--depth-dim', (.72 + depth * .28).toFixed(3));
+        }
         {
           // Light comes from the centre globe: the lit side faces it, the shadow falls away — on every orbit view.
           const dx = layout.centre.x - node.x, dy = layout.centre.y - node.y, length = Math.hypot(dx, dy) || 1;

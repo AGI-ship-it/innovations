@@ -3386,3 +3386,5 @@ aside.planet-preview .preview-value p { font-weight: 600; -webkit-line-clamp: un
   #reader-dialog .cx-tabs { display: none !important; }
   #reader-dialog .cx-tile-info .cx-info-tip { width: min(260px, 80vw) !important; }
 }
+/* Home: planets dim slightly on the far side of their orbit */
+.universe-map .universe-world .planet-body { filter: brightness(var(--depth-dim, 1)); }
