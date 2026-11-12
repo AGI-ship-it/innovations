@@ -233,7 +233,7 @@
       const base = layout.rings.reduce((max, ring) => Math.max(max, ring.rx), 0) || 300;
       minis.forEach(mini => {
         if (!still) mini.angle += elapsed * mini.speed * .05;
-        const rx = Math.max(175, base * mini.reach), ry = rx * .4, tilt = mini.tilt * Math.PI / 180;
+        const rx = Math.min(Math.max(175, base * mini.reach), layout.width / 2 - 14), ry = layout.width < 600 ? rx * 1.25 : rx * .4, tilt = mini.tilt * Math.PI / 180;
         const ox = Math.cos(mini.angle) * rx, oy = Math.sin(mini.angle) * ry;
         const x = layout.centre.x + ox * Math.cos(tilt) - oy * Math.sin(tilt), y = layout.centre.y + ox * Math.sin(tilt) + oy * Math.cos(tilt);
         mini.node.style.translate = `${x.toFixed(1)}px ${y.toFixed(1)}px`;
@@ -262,8 +262,18 @@
         button.dataset.orbitAngle = String(node.angle);
       });
     }
+    // Phones: inner pages become a simple list (no orbits); the home page keeps its compact solar system.
+    const phoneList = () => !universe && window.innerWidth <= 760;
     function measure() {
       if (!(universe ? container.clientWidth : container.parentElement?.clientWidth) || !current.length) return;
+      const list = phoneList();
+      container.classList.toggle('is-list', list);
+      if (list) {
+        layout = null;
+        ['height', 'width', 'transform', 'transform-origin', 'margin-bottom', 'margin-right'].forEach(property => container.style.removeProperty(property));
+        nodes.forEach(node => { node.style.removeProperty('translate'); node.style.removeProperty('z-index'); });
+        return;
+      }
       const items = current.map((item, index) => {
         const node = nodes.get(item.id);
         return { id: item.id, ring: caseMode ? stages.indexOf(item.maturity) : universe ? (current.length <= 4 ? 2 : 1 + index % 2) : index % 3, width: node.offsetWidth, height: node.offsetHeight,
@@ -309,6 +319,17 @@
         layout.rings.push({ rx: extraRx, ry: 210 + (extraRx - 265) * .5, tilt: 3 * Math.PI / 180, empty: true });
         layout.rings.forEach(ring => { ring.shift = (ring.rx - smallest) * .8; });
         layout.nodes = layout.nodes.map((node, index) => point({ ...node, ring: index }, layout.rings[index], node.angle, layout.centre));
+        // Phones: a compact, portrait solar system — taller-than-wide orbits around a smaller AGI globe.
+        if (layout.width < 600) {
+          const w = layout.width, half = Math.max(110, w / 2 - 52);
+          layout.height = 620; layout.centre = { ...layout.centre, x: w / 2, y: 300 };
+          const order = { foods: 0, facilities: 1, automotive: 2, healthcare: 3 };
+          layout.rings = layout.nodes.map((node, index) => {
+            const step = order[node.id] ?? index;
+            return { rx: Math.min(half, 112 + step * 8), ry: 168 + step * 26, tilt: [-6, 5, -3, 7][step % 4] * Math.PI / 180, shift: 0 };
+          });
+          layout.nodes = layout.nodes.map((node, index) => point({ ...node, ring: index }, layout.rings[index], node.angle, layout.centre));
+        }
       }
       container.style.height = `${layout.height}px`;
       // Never scroll: scale the whole system down so it fits the screen's width and the height below the header.
