@@ -54,6 +54,8 @@
   const inspector = document.querySelector('.inspector');
   const browse = { collection: 'all', groupId: 'all', maturity: 'all', domain: 'all', query: '' };
   const detail = byId('case-detail');
+  // The close button sits in the screen's corner, so it lives on the dialog itself, outside the card that animates in.
+  inspector.append(byId('detail-close'));
   let filtered = records;
   let returnFocus = null;
   let returnOrigin = 'scene';
@@ -211,7 +213,7 @@
     else { axis = 'y'; a = { x: sphere.x, y: sphere.y - sphere.r }; b = { x: clampX(sphere.x), y: card.bottom }; }
     // The connector takes the planet's colour: a use case's maturity, a family's colour, or the business area's tint.
     const stageTone = { Established: '#f2b84b', Scaling: '#e24bc0', Emerging: '#3fd6c4' }[target.dataset.maturity];
-    const areaTone = { facilities: '#b58cf0', healthcare: '#3fbf7f', foods: '#f0a24b', automotive: '#5aa9ff' }[target.dataset.universe];
+    const areaTone = { facilities: '#b58cf0', healthcare: '#3fbf7f', foods: '#f0a24b', automotive: '#5aa9ff', property: '#d98ad0' }[target.dataset.universe];
     const tone = stageTone || areaTone || target.style.getPropertyValue('--family-colour').trim();
     if (tone) tether.style.setProperty('--page-primary-button', tone); else tether.style.removeProperty('--page-primary-button');
     setCurve(tether, a, b, axis);
@@ -665,6 +667,7 @@
   function openCase(id, trigger, direction = 0) {
     if (closingCase) return;
     const wasOpen = inspector.open && !detail.hidden;
+    const oldHeight = wasOpen ? inspector.getBoundingClientRect().height : 0, oldTop = parseFloat(inspector.style.top);
     const origin = detail.hidden ? planetOrigin(trigger) : null;
     const record = records.find(item => item.id === id);
     if (!record) return;
@@ -863,14 +866,27 @@
       // First open, one continuous move: the galaxy fades away, the planet glides out, the card follows it in.
       if (animate) {
         try { inspector.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 600, easing: 'ease-out', pseudoElement: '::backdrop' }); } catch { /* ::backdrop animation unsupported: CSS fade still applies. */ }
-        inspector.animate([{ opacity: 0, transform: 'translateX(40px) scale(.97)', filter: 'blur(8px)' }, { opacity: 1, transform: 'none', filter: 'blur(0)' }], { duration: 700, delay: 180, easing: 'cubic-bezier(.22,1,.36,1)', fill: 'backwards' });
+        detail.animate([{ opacity: 0, transform: 'translateX(40px) scale(.97)', filter: 'blur(8px)' }, { opacity: 1, transform: 'none', filter: 'blur(0)' }], { duration: 700, delay: 180, easing: 'cubic-bezier(.22,1,.36,1)', fill: 'backwards' });
       }
     } else if (animate) {
       // Next / previous: the panel stays put; only its content flips across.
-      const shift = (direction || 1) * 28;
-      [byId('detail-title'), byId('detail-number').parentElement, byId('detail-scroll')].forEach(node => node.animate(
+      // The sections move, not the scroller, so the frosted tab bar keeps its blur (no flash).
+      // The old content has already faded out (stepCase); the new content eases in from the side it travels from, one part after another.
+      const shift = (direction || 1) * 22;
+      [byId('detail-number').parentElement, byId('detail-title'), ...byId('detail-scroll').querySelectorAll(':scope > .cx-section')].forEach((node, i) => node.animate(
         [{ opacity: 0, transform: `translateX(${shift}px)` }, { opacity: 1, transform: 'translateX(0)' }],
-        { duration: 280, easing: 'cubic-bezier(.16,1,.3,1)' }));
+        { duration: 520, delay: Math.min(i, 5) * 45, easing: 'cubic-bezier(.22,1,.36,1)', fill: 'backwards' }));
+      byId('detail-index').animate([{ opacity: 0, transform: `translateY(${direction > 0 ? 6 : -6}px)` }, { opacity: 1, transform: 'none' }], { duration: 360, easing: 'cubic-bezier(.22,1,.36,1)' });
+    }
+    placeCard(!wasOpen);
+    // The card grows or shrinks smoothly to the new story's length (and glides if it has to move up), instead of jumping.
+    if (wasOpen && animate) {
+      const box = inspector.getBoundingClientRect(), newTop = parseFloat(inspector.style.top);
+      if (Math.abs(box.height - oldHeight) > 2 || (Number.isFinite(oldTop) && Math.abs(newTop - oldTop) > 1)) {
+        const dy = Number.isFinite(oldTop) && Number.isFinite(newTop) ? oldTop - newTop : 0;
+        inspector.animate([{ height: `${oldHeight}px`, translate: `0 ${dy}px`, overflow: 'hidden' }, { height: `${box.height}px`, translate: '0 0', overflow: 'hidden' }],
+          { duration: 480, easing: 'cubic-bezier(.22,1,.36,1)' });
+      }
     }
     showCardPlanet(id, animate);
 
@@ -922,11 +938,35 @@
     new MutationObserver(fitCheck).observe(byId('case-detail'), { childList: true, subtree: true, characterData: true });
     window.addEventListener('resize', fitCheck);
   }
+  // The card opens centred on screen; on Next / Previous it stays put (no jump), moving up only if it would run off the bottom.
+  function placeCard(centre) {
+    if (window.innerWidth < 1000) { inspector.style.removeProperty('top'); return; }
+    // Measure at the card's final width (beside the planet), from its top to the bottom of the pager: what you actually see.
+    try { cardPlanetSlot(); } catch { /* narrow layouts: no planet column */ }
+    const box = inspector.getBoundingClientRect(), footer = inspector.querySelector('.cx-footer');
+    const h = Math.max(120, (footer ? footer.getBoundingClientRect().bottom : box.bottom) - box.top + 4), room = window.innerHeight, current = parseFloat(inspector.style.top);
+    let top = centre || !Number.isFinite(current) ? (room - h) / 2 : current;
+    if (top + h > room - 12) top = room - 12 - h;
+    inspector.style.setProperty('top', `${Math.max(12, Math.round(top))}px`, 'important');
+  }
+  window.addEventListener('resize', () => { if (inspector.open) placeCard(true); });
   function stepCase(offset) {
     const index = filtered.findIndex(record => record.id === state.selectedId);
     const next = filtered[index + offset];
-    if (next) openCase(next.id, null, offset);
+    if (!next || stepping) return;
+    if (starsPaused || reducedMotion.matches) { openCase(next.id, null, offset); return; }
+    // Fade the current story out toward the side it leaves by, then bring the next one in (see openCase).
+    stepping = true;
+    const parts = [byId('detail-number').parentElement, byId('detail-title'), ...byId('detail-scroll').querySelectorAll(':scope > .cx-section')];
+    const outs = parts.map(node => node.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: `translateX(${-offset * 16}px)` }],
+      { duration: 170, easing: 'cubic-bezier(.4,0,1,1)', fill: 'forwards' }));
+    Promise.all(outs.map(a => a.finished.catch(() => {}))).then(() => {
+      openCase(next.id, null, offset);
+      outs.forEach(a => a.cancel());
+      stepping = false;
+    });
   }
+  let stepping = false;
   // Full card opens as its own screen: the chosen planet glides out of the galaxy, carrying its
   // name and maturity, and the reading panel sits beside it.
   const cardPlanet = el('div', 'card-planet');
@@ -1045,20 +1085,31 @@
     const category = button?.querySelector('.case-category')?.textContent;
     if (category) caption.append(el('span', 'card-planet-category', category));
     if (maturity) caption.append(el('span', `card-planet-maturity is-${maturity.toLowerCase()}`, maturity));
-    const link = makeCurve('card-curve');
+    // Next / previous keep the same connector, so it stays drawn instead of flashing out and in.
+    const link = (cardPlanet.matches(':popover-open') && cardPlanetId !== null && cardPlanet.querySelector('.card-curve.is-live')) || makeCurve('card-curve');
     cardPlanet.replaceChildren(orb, caption, link);
     return { orb, caption, link };
   }
   function showCardPlanet(id, animate) {
     const token = ++cardPlanetToken;
-    cardPlanet.querySelectorAll('*').forEach(node => node.getAnimations().forEach(animation => animation.cancel()));
+    cardPlanet.querySelectorAll(':not(.card-curve, .card-curve *)').forEach(node => node.getAnimations().forEach(animation => animation.cancel()));
     document.querySelectorAll('.is-lifted').forEach(node => node.classList.remove('is-lifted'));
     const source = moonFor(id), slot = cardPlanetSlot();
     if (!source || !slot) { { if (cardPlanet.matches(':popover-open')) cardPlanet.hidePopover(); cardPlanet.classList.remove('is-shown'); cardPlanet.style.setProperty('display', 'none', 'important'); } cardPlanetId = null; return; }
     const wasShown = cardPlanet.matches(':popover-open') && cardPlanetId !== null;
     const from = source.getBoundingClientRect();
+    // Next / previous: keep the old planet for a moment so the new one crossfades over it instead of blinking in.
+    const oldOrb = wasShown && animate ? cardPlanet.querySelector('.card-planet-orb') : null, oldBox = oldOrb?.getBoundingClientRect();
     const { orb, caption, link } = cardPlanetContent(source);
     placeCardPlanet(slot);
+    if (oldOrb && oldBox?.width) {
+      const host = cardPlanet.getBoundingClientRect();
+      Object.assign(oldOrb.style, { position: 'absolute', left: `${oldBox.left - host.left}px`, top: `${oldBox.top - host.top}px`, width: `${oldBox.width}px`, height: `${oldBox.height}px`, margin: '0', pointerEvents: 'none' });
+      oldOrb.classList.add('card-planet-ghost');
+      cardPlanet.append(oldOrb);
+      const drop = () => oldOrb.remove();
+      oldOrb.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 360, easing: 'ease-out', fill: 'forwards' }).finished.then(drop, drop);
+    }
     if (!cardPlanet.matches(':popover-open')) cardPlanet.showPopover();
     cardPlanet.classList.add('is-shown'); cardPlanet.style.removeProperty('display');
     cardPlanetId = id;
@@ -1066,9 +1117,9 @@
     if (!animate || token !== cardPlanetToken) { placeCardLink(); replayCurve(link); return; }
     const rise = [{ opacity: 0, transform: 'translateY(14px)' }, { opacity: 1, transform: 'none' }];
     if (wasShown) {
-      orb.animate([{ opacity: 0, transform: 'scale(.82) rotate(-8deg)' }, { opacity: 1, transform: 'none' }], { duration: 380, easing: 'cubic-bezier(.16,1,.3,1)' });
-      caption.animate(rise, { duration: 320, delay: 80, easing: 'cubic-bezier(.16,1,.3,1)', fill: 'backwards' });
-      placeCardLink(); replayCurve(link, byId('detail-title'));
+      orb.animate([{ opacity: 0, transform: 'scale(.95)' }, { opacity: 1, transform: 'none' }], { duration: 360, easing: 'cubic-bezier(.16,1,.3,1)' });
+      caption.animate([{ opacity: .4, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 300, easing: 'cubic-bezier(.16,1,.3,1)' });
+      placeCardLink();
       return;
     }
     const target = orb.getBoundingClientRect();

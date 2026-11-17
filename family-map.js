@@ -65,7 +65,28 @@
     return node;
   };
   const clear = (a, b, gap = 10) => Math.abs(a.x - b.x) >= (a.width + b.width) / 2 + gap || Math.abs(a.y - b.y) >= (a.height + b.height) / 2 + gap;
+  // Home on wide screens: the system seen through a real perspective camera, as in the reference galaxy.
+  function orbitCamera(W, H) {
+    const ORBIT = [6.4, 9, 11.5], OVAL = [1.13, .86], elev = 33 * Math.PI / 180, tanV = Math.tan(19 * Math.PI / 180), aspect = W / H;
+    const half = ORBIT[2] * OVAL[0] + 2.8, halfZ = ORBIT[2] * OVAL[1] + 2.8;
+    const d = Math.max(half / (tanV * aspect), (halfZ * Math.sin(elev) + 2.2) / tanV) * 1.14; // wide orbits, kept inside the screen
+    const C = [0, Math.sin(elev) * d, Math.cos(elev) * d], look = [0, -1.7, 0]; // aimed below AGI, so the system sits a little above the middle
+    const sub = (a, b) => a.map((v, i) => v - b[i]), dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+    const norm = a => { const l = Math.hypot(...a); return a.map(v => v / l); };
+    const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+    const f = norm(sub(look, C)), r = norm(cross(f, [0, 1, 0])), u = cross(r, f);
+    const TZ = -.12, TX = .05; // the whole system leans a little, like a galaxy seen slightly off-axis
+    const lean = ([x, y, z]) => { const x1 = x * Math.cos(TZ) - y * Math.sin(TZ), y1 = x * Math.sin(TZ) + y * Math.cos(TZ);
+      return [x1, y1 * Math.cos(TX) - z * Math.sin(TX), y1 * Math.sin(TX) + z * Math.cos(TX)]; };
+    const project = P => { const v = sub(P, C), zc = dot(v, f); return { x: W / 2 + dot(v, r) / (zc * tanV * aspect) * W / 2, y: H / 2 - dot(v, u) / (zc * tanV) * H / 2, z: zc }; };
+    const origin = project([0, 0, 0]);
+    // A planet on orbit o at angle a: x along the long side, z toward the camera. Angles run like the reference (a − turn).
+    const ring = o => ({ at: angle => { const a = -angle, R = ORBIT[o], p = project(lean([Math.cos(a) * R * OVAL[0], 0, Math.sin(a) * R * OVAL[1]]));
+      return { x: p.x, y: p.y, k: origin.z / p.z, behind: p.z > origin.z }; } });
+    return { origin, ring, ORBIT };
+  }
   function point(item, ring, angle, centre) {
+    if (ring.at) { const p = ring.at(angle); return { ...item, angle, x: p.x, y: p.y, k: p.k, behind: p.behind }; }
     const ox = Math.cos(angle) * ring.rx, oy = Math.sin(angle) * ring.ry, shift = ring.shift || 0;
     if (!ring.tilt) return { ...item, angle, x: centre.x + shift + ox, y: centre.y + oy };
     // A tilted (and optionally off-centre) orbit: rotate the ellipse point around its own centre.
@@ -87,9 +108,9 @@
     const attempts = fitHeight ? 20 : 12, growth = fitHeight ? 1.08 : 1.18;
     for (let attempt = 0; attempt < attempts; attempt++, height *= growth) {
       const centre = { x: width / 2, y: height / 2, width: centreSize || (compact ? (caseMode ? 120 : 78) : 160), height: centreSize || (caseMode ? 180 : compact ? 100 : 160) };
-      const outerY = loose ? height / 2 - maxHeight / 2 - 44 : Math.min(height / 2 - maxHeight / 2 - 44, Math.max(outerX * .5, 150));
+      const outerY = loose ? height / 2 - maxHeight / 2 - 44 : Math.min(height / 2 - maxHeight / 2 - 44, Math.max(outerX * .44, 140));
       // Try a few ring spacings at this height before giving up and growing taller.
-      const ringSets = caseMode ? (fitHeight ? [[.62, .81, 1], [.7, .86, 1], [.55, .78, 1], [.48, .74, 1]] : [[.62, .81, 1]]) : fitHeight ? [[.46, .74, 1], [.52, .78, 1], [.4, .7, 1]] : [[.40, .70, 1]];
+      const ringSets = caseMode ? (fitHeight ? [[.56, .78, 1], [.62, .81, 1], [.7, .86, 1], [.48, .74, 1]] : [[.56, .78, 1], [.62, .81, 1]]) : fitHeight ? [[.56, .78, 1], [.46, .74, 1], [.52, .78, 1], [.4, .7, 1]] : [[.56, .78, 1], [.40, .70, 1]];
       for (const set of ringSets) {
       const rings = set.map(scale => ({ rx: outerX * scale, ry: outerY * scale }));
       const placed = [];
@@ -121,12 +142,12 @@
     nodes.forEach((node, index) => {
       const ring = layout.rings[node.ring];
       // Evenly spread views orbit at one speed so their spacing holds; others drift per ring.
-      const delta = Math.min(seconds, .05) * Math.PI * 2 / (layout.uniform ? 300 : 260 + node.ring * 80);
+      // One speed for every orbit (about one turn in 2½ minutes, as in the reference), so the system turns as one.
+      const delta = Math.min(seconds, .05) * .04;
       // The universe's planets travel together at one speed, so their spacing holds without collision checks.
-      // Home: each planet keeps its own pace like a real system — inner orbits run faster (Kepler: speed ∝ r^-1.5).
       if (layout.together) {
-        const inner = Math.min(...layout.rings.map(r => r.rx));
-        Object.assign(node, point(node, ring, node.angle + delta * 1.6 * Math.pow(inner / ring.rx, 1.5), layout.centre)); return;
+        // As in the reference, the whole system turns as one (0.04 rad/s), so the planets keep their spacing.
+        Object.assign(node, point(node, ring, node.angle + delta, layout.centre)); return;
       }
       // Check the whole short arc, preserving readable upright hit targets.
       for (const fraction of [1, .5, .2]) {
@@ -208,7 +229,7 @@
         const canvas = document.createElement('canvas'); canvas.className = 'agi-mark-canvas'; canvas.setAttribute('aria-hidden', 'true');
         wrap.append(canvas);
         sun.append(spinGlobe('assets/planets/solar/2k_moon.jpg', 24), wrap, element('span', 'globe-shade'));
-        paintWrappedMark(canvas, mark.src);
+        paintWrappedMark(canvas, 'assets/mark-white.svg?v=2'); // the mark in white on the AGI globe
       } else sun.append(mark);
     }
     const caption = element('span', 'centre-caption', caseMode || universe ? centreLabel : 'TECHNOLOGY FAMILIES');
@@ -257,11 +278,43 @@
         button.style.translate = `${node.x.toFixed(2)}px ${node.y.toFixed(2)}px`;
         // Home: a planet above the centre is on the far side (behind the AGI globe); below it, in front.
         if (universe) {
+          if (node.k) {
+            // The planet itself sits on its orbit (not the middle of planet + label), and it scales around its own centre.
+            const body = button.querySelector('.planet-body');
+            if (body) { const lift = body.offsetTop + body.offsetHeight / 2; button.style.transform = `translate(-50%, ${-lift.toFixed(1)}px)`; button.style.transformOrigin = `50% ${lift.toFixed(1)}px`; }
+            // Seen through the camera: size follows true distance, and depth decides in front of / behind AGI.
+            // The live area (Facilities) is always in view: it passes in front of the AGI globe, never hidden or dimmed.
+            const always = node.status === 'live' || node.id === 'facilities';
+            button.style.zIndex = always ? '4' : node.behind ? '1' : '3';
+            // Behind the AGI globe its sphere is hidden by the globe, so its name steps back too (and takes no clicks).
+            // Measured on screen: hide the name when any part of it (or the planet) overlaps the globe's circle.
+            let hidden = false;
+            if (node.behind && !always) {
+              const globe = (centre.querySelector('.service-sun .spin-globe') || centre.querySelector('.service-sun') || centre).getBoundingClientRect();
+              const gx = globe.left + globe.width / 2, gy = globe.top + globe.height / 2, gr = globe.width / 2 + 4;
+              hidden = [...button.querySelectorAll('.family-name, .family-count, .planet-body .spin-globe')].some(part => {
+                const b = part.getBoundingClientRect(); if (!b.width) return false;
+                const px = Math.max(b.left, Math.min(gx, b.right)), py = Math.max(b.top, Math.min(gy, b.bottom));
+                return Math.hypot(px - gx, py - gy) < gr;
+              });
+            }
+            button.classList.toggle('is-occluded', hidden);
+            const planetScale = Math.min(1, Math.max(always ? .6 : .42, node.k * .66)); // small planets far out on wide orbits
+            button.style.scale = planetScale.toFixed(3);
+            button.style.setProperty('--label-k', (1 / planetScale).toFixed(3)); // names keep one size, near or far
+            button.style.setProperty('--depth-dim', always ? '1' : Math.min(1, Math.max(.62, .25 + node.k * .7)).toFixed(3));
+          } else {
           button.style.zIndex = node.y < layout.centre.y ? '1' : '3';
           // Perspective: on the far side of the orbit a planet looks smaller and dimmer; on the near side, larger.
           const depth = (Math.sin(node.angle) + 1) / 2;
           button.style.scale = (.82 + depth * .3).toFixed(3);
           button.style.setProperty('--depth-dim', (.72 + depth * .28).toFixed(3));
+          }
+        } else if (!container.classList.contains('is-list')) {
+          // Inner views keep the same sense of depth, more gently: nearer planets a little larger and in front.
+          const depth = (Math.sin(node.angle) + 1) / 2;
+          button.style.scale = (.93 + depth * .12).toFixed(3);
+          button.style.zIndex = String(1 + Math.round(depth * 4));
         }
         {
           // Light comes from the centre globe: the lit side faces it, the shadow falls away — on every orbit view.
@@ -283,7 +336,7 @@
       if (list) {
         layout = null;
         ['height', 'width', 'transform', 'transform-origin', 'margin-bottom', 'margin-right'].forEach(property => container.style.removeProperty(property));
-        nodes.forEach(node => { node.style.removeProperty('translate'); node.style.removeProperty('z-index'); });
+        nodes.forEach(node => { node.style.removeProperty('translate'); node.style.removeProperty('z-index'); node.style.removeProperty('scale'); });
         return;
       }
       const items = current.map((item, index) => {
@@ -313,7 +366,7 @@
         // Each business area gets its own orbit, uneven and fairly close to AGI (never crossing the centre globe).
         const base = layout.rings[layout.nodes[0]?.ring ?? 0];
         // Bigger planets travel close to AGI; smaller ones orbit further out.
-        const reach = { foods: .56, automotive: .67, facilities: .62, healthcare: .72 };
+        const reach = { foods: .56, automotive: .67, facilities: .62, healthcare: .72, property: .7 };
         const factors = [.64, .76, .7, .82, .67, .79];
         layout.rings = layout.nodes.map((node, index) => {
           const rx = Math.min(Math.max(265, base.rx * (reach[node.id] || factors[index % factors.length])), layout.width / 2 - 90);
@@ -331,11 +384,26 @@
         layout.rings.push({ rx: extraRx, ry: 210 + (extraRx - 265) * .5, tilt: 3 * Math.PI / 180, empty: true });
         layout.rings.forEach(ring => { ring.shift = (ring.rx - smallest) * .8; });
         layout.nodes = layout.nodes.map((node, index) => point({ ...node, ring: index }, layout.rings[index], node.angle, layout.centre));
+        // Wide screens: three orbits seen through the camera, planets at the reference's places (two share the middle orbit).
+        if (layout.width >= 600) {
+          const W = layout.width, H = Math.round(Math.min(Math.max(W * .62, 600), 980)), cam = orbitCamera(W, H);
+          layout.height = H; layout.centre = { ...layout.centre, x: cam.origin.x, y: cam.origin.y };
+          const plan = { facilities: [2, 0], automotive: [2, 90], healthcare: [0, -90], foods: [2, 180], property: [1, 135] }; // Facilities on the outer ring (right); front, back, left; Property on the middle ring
+          const spare = [[1, -135], [2, -45]];
+          const used = layout.nodes.map((node, index) => plan[node.id] || spare[index % 2]);
+          layout.rings = [0, 1, 2].map(o => {
+            const shape = cam.ring(o), pts = Array.from({ length: 97 }, (_, i) => shape.at(i / 96 * Math.PI * 2));
+            const xs = pts.map(p => p.x), ys = pts.map(p => p.y);
+            return { ...shape, rx: (Math.max(...xs) - Math.min(...xs)) / 2, ry: (Math.max(...ys) - Math.min(...ys)) / 2, tilt: 0, shift: 0,
+              d: `M${pts.map(p => `${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join('L')}Z` };
+          });
+          layout.nodes = layout.nodes.map((node, index) => point({ ...node, ring: used[index][0] }, layout.rings[used[index][0]], -used[index][1] * Math.PI / 180, layout.centre));
+        }
         // Phones: a compact, portrait solar system — taller-than-wide orbits around a smaller AGI globe.
         if (layout.width < 600) {
           const w = layout.width, half = Math.max(110, w / 2 - 52);
           layout.height = 620; layout.centre = { ...layout.centre, x: w / 2, y: 300 };
-          const order = { foods: 0, facilities: 1, automotive: 2, healthcare: 3 };
+          const order = { foods: 0, facilities: 1, automotive: 2, healthcare: 3, property: 4 };
           layout.rings = layout.nodes.map((node, index) => {
             const step = order[node.id] ?? index;
             return { rx: Math.min(half, 112 + step * 8), ry: 168 + step * 26, tilt: [-6, 5, -3, 7][step % 4] * Math.PI / 180, shift: 0 };
@@ -357,7 +425,9 @@
       centre.style.top = `${layout.centre.y}px`;
       paths.setAttribute('viewBox', `0 0 ${layout.width} ${layout.height}`);
       // The universe draws only the orbits that carry a planet, keeping the view simple.
-      paths.replaceChildren(...layout.rings.map((ring, index) => (universe && !ring.empty && !layout.nodes.some(node => node.ring === index)) ? null : svgElement('ellipse', {
+      paths.replaceChildren(...layout.rings.map((ring, index) => (universe && ((!ring.empty && !layout.nodes.some(node => node.ring === index))
+        || layout.rings.slice(0, index).some(other => !other.empty && !ring.empty && !ring.d && Math.abs(other.rx - ring.rx) < 1))) ? null
+        : ring.d ? svgElement('path', { d: ring.d, class: `family-track track-${index}` }) : svgElement('ellipse', {
         cx: layout.centre.x + (ring.shift || 0), cy: layout.centre.y, rx: ring.rx, ry: ring.ry,
         ...(ring.tilt ? { transform: `rotate(${(ring.tilt * 180 / Math.PI).toFixed(2)} ${layout.centre.x + (ring.shift || 0)} ${layout.centre.y})` } : {}),
         ...(caseMode ? { 'data-orbit-maturity': stages[index] } : {}), class: `family-track track-${index}`,
@@ -381,7 +451,7 @@
         const steps = 12;
         const layers = Array.from({ length: steps }, (_, i) => {
           const t = i / (steps - 1), length = Math.round(220 - t * 206);
-          const line = svgElement('ellipse', { ...shape, class: `orbit-comet${i === steps - 1 ? ' is-core' : ''}` });
+          const line = ring.d ? svgElement('path', { d: ring.d, pathLength: 1000, class: `orbit-comet${i === steps - 1 ? ' is-core' : ''}` }) : svgElement('ellipse', { ...shape, class: `orbit-comet${i === steps - 1 ? ' is-core' : ''}` });
           line.style.strokeDasharray = `${length} ${1000 - length}`; line.style.strokeWidth = (1 + t * 1.6).toFixed(2);
           line.style.opacity = (0.07 + t * t * 0.25).toFixed(3); line.dataset.length = length; return line;
         });
@@ -511,12 +581,36 @@
         }
       });
     }
+    // Drag to turn the system, with momentum that eases out (as in the reference). A short press is still a click.
+    let drag = null, spinVelocity = 0, swallowClick = false;
+    const turnAll = angle => { if (!layout || !angle) return; layout.nodes = layout.nodes.map(node => point(node, layout.rings[node.ring], node.angle + angle, layout.centre)); position(); };
+    container.addEventListener('pointerdown', event => {
+      if (event.button !== 0 || container.classList.contains('is-list') || !layout) return;
+      drag = { x: event.clientX, last: event.clientX, moved: false, id: event.pointerId, threshold: event.pointerType === 'touch' ? 14 : 7 };
+    });
+    container.addEventListener('pointermove', event => {
+      if (!drag || event.pointerId !== drag.id) return;
+      const dx = event.clientX - drag.last; drag.last = event.clientX;
+      if (!drag.moved && Math.abs(event.clientX - drag.x) < drag.threshold) return;
+      if (!drag.moved) { drag.moved = true; container.classList.add('is-dragging'); try { container.setPointerCapture(event.pointerId); } catch { /* pointer already released */ } }
+      const step = dx * 2.6 / Math.max(container.clientWidth, 1) * Math.PI;
+      turnAll(step); spinVelocity = spinVelocity * .6 + step * 60 * .4;
+    });
+    const endDrag = event => {
+      if (!drag || (event.pointerId !== undefined && event.pointerId !== drag.id)) return;
+      if (drag.moved) { swallowClick = true; setTimeout(() => { swallowClick = false; }, 0); }
+      container.classList.remove('is-dragging'); drag = null;
+    };
+    container.addEventListener('pointerup', endDrag); container.addEventListener('pointercancel', endDrag);
+    container.addEventListener('click', event => { if (swallowClick) { event.stopPropagation(); event.preventDefault(); swallowClick = false; } }, true);
     function animate(timestamp) {
       const elapsed = previous === null ? 0 : Math.min((timestamp - previous) / 1000, .05); previous = timestamp;
+      // momentum after a drag
+      if (!drag && Math.abs(spinVelocity) > .0005 && !reduced.matches) { turnAll(spinVelocity * elapsed); spinVelocity *= Math.pow(.06, elapsed); } else if (!drag) spinVelocity = 0;
       const paused = container.closest('[hidden]') || reduced.matches || document.hidden
         || document.body.classList.contains('stars-paused') || document.body.classList.contains('planet-preview-open') || document.querySelector('dialog[open]')
         || container.querySelector('button:hover, button:focus, details[open]');
-      if (layout && !paused) {
+      if (layout && !paused && !drag) {
         speed += (1 - speed) * (1 - Math.exp(-elapsed / .65));
         layout.nodes = advance(layout, elapsed * speed * (universe ? 1 : 1)); position();
       } else speed = 0;

@@ -63,7 +63,8 @@
   }
   function createStarfield() {
     const sky = document.getElementById('cosmic-sky');
-    if (!sky) return;
+    // The painted sky (starfield.js) has its own stars; this older star layer must not replace it.
+    if (!sky || sky.querySelector('.galaxy-sky, .nebula-sky')) return;
     const svgNode = (tag, attributes) => {
       const element = document.createElementNS('http://www.w3.org/2000/svg', tag);
       Object.entries(attributes).forEach(([key, value]) => element.setAttribute(key, value));
@@ -93,7 +94,7 @@
       (bright ? near : far).append(star);
     }
     svg.append(far, near);
-    sky.replaceChildren(svg);
+    sky.append(svg);
   }
 
   createStarfield();

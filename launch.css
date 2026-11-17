@@ -1,0 +1,506 @@
+/* PROTOTYPE: The Edit · Edition 01 as a space mission that launches into the Innovation Hub (see launch.js; active only with ?launch). */
+body.lp-on { overflow: hidden; }
+/* While reading, only the sky shows behind the edition; the Hub fades in under the rocket. */
+#explore { transition: opacity .9s ease .2s; }
+body.lp-reading #explore { opacity: 0; pointer-events: none; transition: none; }
+body.lp-reading .command-bar { opacity: 0; pointer-events: none; }
+
+.lp-edit { --tint: #ffcf6e; --ink: #f2edf8; --dim: #f2edf899; --line: #ffffff1f; --pink: #de0090;
+  --mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
+  position: fixed; inset: 0; z-index: 900; color: var(--ink); overflow: hidden;
+  background: radial-gradient(70% 55% at 78% 30%, color-mix(in srgb, var(--tint) 7%, transparent), transparent 70%), linear-gradient(180deg, #05030a55, #05030acc 92%);
+  transition: transform .75s cubic-bezier(.55,0,.75,.2), opacity .6s ease .15s, background .9s; }
+.lp-edit.is-gone { transform: translateY(105%); opacity: 0; pointer-events: none; }
+.lp-edit button { font: inherit; color: inherit; }
+.lp-sq { display: inline-block; width: 6px; height: 6px; background: var(--pink); flex: none; }
+
+/* The planet of the current chapter, large, in the upper right, sitting above a quiet horizon */
+.lp-sky { position: absolute; inset: 0; pointer-events: none; }
+.lp-planet { position: absolute; right: max(-6vw, -80px); top: 4vh; width: min(70vh, 52vw); aspect-ratio: 1; --family-colour: var(--planet-tint); }
+.lp-planet .spin-globe { width: 100%; filter: none; }
+.lp-planet .spin-globe::before { background:
+  radial-gradient(circle at 26% 30%, #ffffff24 0%, transparent 30%),
+  radial-gradient(circle at 24% 28%, transparent 0%, transparent 34%, #00000080 54%, #000000e0 70%, #000000fa 86%); }
+.lp-planet-glow { position: absolute; inset: 0; border-radius: 50%;
+  box-shadow: -18px -10px 60px -20px color-mix(in srgb, var(--planet-tint) 55%, transparent), 0 0 160px -20px color-mix(in srgb, var(--planet-tint) 22%, transparent); }
+.lp-horizon { position: absolute; left: 0; right: 0; top: 66%; height: 34%; pointer-events: none;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--tint) 12%, transparent) 0, #0000 2px, #07040d99 30%, #05030aee 100%);
+  border-top: 1px solid color-mix(in srgb, var(--tint) 22%, #ffffff10); transition: background .9s, border-color .9s; }
+.lp-horizon::before { content: ''; position: absolute; left: 0; right: 0; top: -60px; height: 60px; background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--tint) 9%, transparent)); }
+
+/* Top bar */
+.lp-bar { position: absolute; top: 0; left: 0; right: 0; z-index: 3; display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 26px clamp(20px, 4vw, 56px); }
+.lp-brand { display: flex; align-items: center; gap: 14px; }
+.lp-brand-tile { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 13px; background: #ffffff0f; border: 1px solid var(--line); }
+.lp-brand-words { display: flex; flex-direction: column; gap: 3px; }
+.lp-brand-words strong { font-size: 18px; font-weight: 600; letter-spacing: -.2px; }
+.lp-brand-words span { font-size: 11px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--dim); }
+.lp-top { display: flex; align-items: center; gap: 28px; font-size: 13px; letter-spacing: 1.2px; text-transform: uppercase; }
+.lp-top-item { display: inline-flex; align-items: center; gap: 10px; }
+.lp-top-dim { color: var(--dim); }
+.lp-top-link { padding: 10px 16px; border-radius: 999px; border: 1px solid var(--line); background: #ffffff08; cursor: pointer; letter-spacing: 1.2px; text-transform: uppercase; transition: background .2s, border-color .2s; }
+.lp-top-link:hover { background: #ffffff14; border-color: #ffffff40; }
+
+/* Stage: the text column on the left, the typed transmission beside the planet */
+.lp-stage { position: absolute; inset: 104px clamp(80px, 8vw, 120px) 92px clamp(20px, 5vw, 72px); display: grid; grid-template-columns: minmax(0, 600px) 1fr; gap: 48px; z-index: 2; }
+.lp-content { min-height: 0; overflow: auto; scrollbar-width: none; padding: 8px 6px 24px 0; align-self: center; max-height: 100%;
+  mask-image: linear-gradient(180deg, transparent 0, #000 12px, #000 calc(100% - 24px), transparent); }
+.lp-content::-webkit-scrollbar { display: none; }
+.lp-scene { display: flex; flex-direction: column; gap: 16px; }
+.lp-kicker { font-family: var(--mono); font-size: 12px; letter-spacing: 2.2px; text-transform: uppercase; color: var(--tint); transition: color .9s; }
+.lp-rule { display: block; width: 48px; height: 3px; background: var(--pink); border-radius: 2px; }
+.lp-cover-title { margin: 6px 0 0; font-size: clamp(52px, 7.4vw, 112px); line-height: .98; font-weight: 600; letter-spacing: -2.5px; display: flex; flex-direction: column; }
+.lp-cover-title span:last-child { background: linear-gradient(90deg, #fff, color-mix(in srgb, var(--tint) 70%, #fff)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.lp-standfirst { margin: 4px 0 0; max-width: 480px; font-size: clamp(17px, 1.4vw, 20px); line-height: 1.5; color: #e3dbee; }
+.lp-fine { margin: 10px 0 0; font-size: 12px; color: #f2edf866; }
+.lp-title { margin: 0; font-size: clamp(34px, 3.6vw, 54px); line-height: 1.05; font-weight: 600; letter-spacing: -1.2px; }
+.lp-excerpt { margin: 0; font-size: clamp(17px, 1.35vw, 20px); line-height: 1.45; font-style: italic; color: #d9cdf0; }
+.lp-meta { margin: 0; font-size: 12px; color: var(--dim); }
+.lp-body p { margin: 0 0 12px; font-size: 15.5px; line-height: 1.7; color: #cfc6da; }
+.lp-source { display: flex; flex-direction: column; gap: 3px; align-self: flex-start; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--line); background: #ffffff08; color: var(--ink); text-decoration: none; transition: background .2s; }
+.lp-source span { font-size: 11px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--dim); }
+.lp-source strong { font-size: 14px; font-weight: 500; }
+.lp-source:hover { background: #ffffff12; }
+.lp-dock { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; margin-top: 10px; padding-top: 20px; border-top: 1px solid var(--line); }
+.lp-dest { margin: 0; display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: var(--dim); }
+.lp-dest span:first-child { font-family: var(--mono); letter-spacing: 1.8px; text-transform: uppercase; font-size: 10.5px; }
+.lp-dest strong { font-size: 15px; color: var(--tint); font-weight: 500; transition: color .9s; }
+.lp-actions { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 18px; }
+.lp-primary { padding: 15px 26px; border-radius: 999px; border: 0; background: #fff; color: #2a0f4a !important; font-weight: 600 !important; font-size: 15px !important; cursor: pointer; transition: transform .2s, box-shadow .2s; }
+.lp-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 30px #ffffff26; }
+.lp-ghost { padding: 13px 20px; border-radius: 999px; border: 1px solid var(--line); background: transparent; cursor: pointer; font-size: 14px; }
+.lp-ghost:hover { background: #ffffff10; }
+.lp-note { display: flex; flex-direction: column; gap: 6px; padding: 18px 20px; border-radius: 14px; border: 1px solid var(--line); background: #0e0a16b3; -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+.lp-note-kicker { font-family: var(--mono); font-size: 11px; letter-spacing: 1.8px; text-transform: uppercase; color: var(--tint); }
+.lp-note strong { font-size: 19px; font-weight: 600; }
+.lp-note p { margin: 0; font-size: 15px; line-height: 1.65; color: #cfc6da; }
+
+/* The launch button: a rocket that wiggles, ready to go */
+.lp-launch { display: inline-flex; align-items: center; gap: 10px; padding: 12px 22px 12px 14px; border: 0; border-radius: 999px;
+  background: linear-gradient(180deg, #343a48, #1c2029); font-size: 15px; font-weight: 500; cursor: pointer;
+  box-shadow: inset 0 1px 0 #ffffff2e, 0 0 0 1px #ffffff1a, 0 10px 26px #0006; transition: transform .2s, box-shadow .2s; }
+.lp-launch:hover { transform: translateY(-2px); box-shadow: inset 0 1px 0 #ffffff26, 0 0 0 1px #ff8a2a66, 0 12px 30px #ff7a1a55; }
+.lp-launch:focus-visible, .lp-edit button:focus-visible, .lp-source:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+.lp-launch:disabled { cursor: default; }
+.lp-launch-rocket { display: block; width: 18px; height: 34px; transition: opacity .15s; }
+.lp-launch-rocket.is-gone { opacity: 0; }
+.lp-launch-rocket svg, .lp-rocket svg, .lp-rail-rocket svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.lp-launch:hover .lp-launch-rocket { animation: lp-wiggle .5s ease-in-out infinite alternate; }
+@keyframes lp-wiggle { from { translate: 0 1px; } to { translate: 0 -2px; } }
+.lp-launch-rocket .rk-flame-outer, .lp-launch-rocket .rk-flame-inner { opacity: 0; transition: opacity .2s; }
+.lp-launch:hover .lp-launch-rocket .rk-flame-outer, .lp-launch:hover .lp-launch-rocket .rk-flame-inner { opacity: 1; }
+
+/* Typed transmission, beside the planet (like a message arriving) */
+.lp-transmission { align-self: center; justify-self: center; display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; max-width: 360px; margin-top: 12vh; }
+.lp-transmission .lp-sq { margin-top: 7px; background: var(--tint); transition: background .9s; }
+.lp-tx-text { margin: 0; min-height: 7.2em; font-family: var(--mono); font-size: 14px; line-height: 1.8; letter-spacing: 2.6px; color: #f2edf8e6; text-shadow: 0 0 18px #000; }
+.lp-tx-dots { grid-column: 2; font-family: var(--mono); font-size: 9px; letter-spacing: 4px; color: var(--tint); transition: color .9s; }
+
+/* Right edge: the mission path */
+.lp-rail { position: absolute; right: clamp(20px, 3vw, 44px); top: 50%; translate: 0 -50%; height: min(46vh, 420px); width: 24px; z-index: 3; }
+.lp-rail svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.lp-rail path { fill: none; stroke: #ffffff40; stroke-width: 1.2; vector-effect: non-scaling-stroke; }
+.lp-tick { position: absolute; left: 50%; width: 26px; height: 26px; translate: -50% -50%; padding: 0; border: 0; background: none; cursor: pointer; }
+.lp-tick::before { content: ''; position: absolute; inset: 9px; border-radius: 50%; background: #ffffff55; transition: inset .3s, background .3s, box-shadow .3s; }
+.lp-tick.is-past::before { background: color-mix(in srgb, var(--tint) 60%, #fff 10%); }
+.lp-tick.is-on::before { inset: 7px; background: var(--tint); box-shadow: 0 0 12px var(--tint); }
+.lp-tick-label { position: absolute; right: 30px; top: 50%; translate: 0 -50%; font-family: var(--mono); font-size: 10.5px; letter-spacing: 1.6px; text-transform: uppercase; color: var(--dim); white-space: nowrap; opacity: 0; transition: opacity .2s; }
+.lp-tick:hover .lp-tick-label, .lp-tick:focus-visible .lp-tick-label, .lp-tick.is-on .lp-tick-label { opacity: 1; }
+.lp-tick.is-on .lp-tick-label { color: var(--ink); }
+.lp-rail-rocket { position: absolute; left: calc(50% + 18px); width: 11px; height: 22px; translate: 0 -50%; rotate: 180deg; pointer-events: none; transition: top .9s cubic-bezier(.22,1,.36,1); }
+.lp-rail-rocket .rk-flame-outer, .lp-rail-rocket .rk-flame-inner { opacity: .8; }
+
+/* Bottom bar */
+.lp-foot { position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 22px clamp(20px, 4vw, 56px) 26px; }
+.lp-chapters-btn { display: inline-flex; align-items: center; gap: 12px; padding: 0; border: 0; background: none; cursor: pointer; font-family: var(--mono) !important; font-size: 12.5px; letter-spacing: 2.4px; text-transform: uppercase; }
+.lp-chapters-btn kbd { display: grid; place-items: center; min-width: 28px; height: 28px; padding: 0 6px; border-radius: 7px; background: #f2edf8; color: #1a1222; font-family: var(--mono); font-size: 12px; box-shadow: 0 2px 0 #ffffff55; }
+.lp-lines { font-size: 15px; }
+.lp-steps { display: flex; align-items: center; gap: 10px; }
+.lp-step { max-width: 34ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 11px 18px; border-radius: 999px; border: 1px solid var(--line); background: #ffffff08; cursor: pointer; font-size: 13.5px !important; color: var(--dim) !important; transition: background .2s, color .2s; }
+.lp-step:hover { background: #ffffff14; color: var(--ink) !important; }
+.lp-step-next { color: var(--ink) !important; border-color: #ffffff33; }
+.lp-step[hidden] { display: none; }
+
+/* Cover: a slow marquee of chapters along the horizon */
+.lp-marquee { position: absolute; left: 0; right: 0; bottom: 84px; z-index: 1; overflow: hidden; opacity: 0; pointer-events: none; transition: opacity .8s;
+  mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent); }
+.lp-edit[data-scene="cover"] .lp-marquee { opacity: 1; }
+.lp-marquee-strip { display: flex; gap: 56px; width: max-content; animation: lp-marquee 60s linear infinite; }
+@keyframes lp-marquee { to { transform: translateX(-50%); } }
+.lp-mq { display: inline-flex; align-items: center; gap: 18px; font-size: clamp(28px, 3vw, 44px); font-weight: 600; letter-spacing: -.5px; text-transform: uppercase; color: #f2edf8d9; white-space: nowrap; }
+.lp-mq-dot { display: inline-block; width: 1.1em; height: 1.1em; border-radius: 50%; flex: none; background: var(--strip) center / 200% 100%;
+  box-shadow: inset -.28em -.18em .4em #000000d9, inset .06em .06em .1em #ffffff40; }
+
+/* Chapters panel */
+.lp-panel { position: absolute; inset: 0; z-index: 10; display: grid; place-items: center; padding: 24px; background: #05030ab3; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+.lp-panel[hidden] { display: none; }
+.lp-panel-inner { width: min(640px, 100%); max-height: calc(100vh - 48px); overflow: auto; padding: 26px; border-radius: 20px; border: 1px solid var(--line); background: linear-gradient(160deg, #1a1226f2, #0e0a16f5); box-shadow: 0 30px 80px #000a; }
+.lp-panel-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.lp-panel-close { width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--line); background: #ffffff08; cursor: pointer; font-size: 20px !important; }
+.lp-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.lp-list-item { width: 100%; display: flex; align-items: center; gap: 16px; padding: 12px 14px; border: 0; border-radius: 12px; background: none; cursor: pointer; text-align: left; transition: background .2s; }
+.lp-list-item:hover { background: #ffffff0d; }
+.lp-list-item .lp-mq-dot { width: 40px; height: 40px; }
+.lp-list-text { display: flex; flex-direction: column; gap: 3px; }
+.lp-list-meta { font-family: var(--mono); font-size: 11px; letter-spacing: 1.6px; text-transform: uppercase; color: var(--dim); }
+.lp-list-text strong { font-size: 17px; font-weight: 600; }
+.lp-list-dest { font-size: 12.5px; color: #c9b6f0; }
+
+/* the rocket in flight */
+.lp-rocket { position: fixed; left: 0; top: 0; z-index: 960; width: 40px; height: 76px; pointer-events: none; opacity: 0; will-change: transform; }
+.lp-rocket.is-on { opacity: 1; filter: drop-shadow(0 0 6px #ffb34766) drop-shadow(0 4px 10px #0008); }
+.rk-flame-outer { transform-origin: 32px 94px; animation: lp-flame .08s linear infinite alternate; }
+.rk-flame-inner { transform-origin: 32px 94px; animation: lp-flame .06s linear infinite alternate-reverse; }
+@keyframes lp-flame { from { transform: scaleY(.8); } to { transform: scaleY(1.15); } }
+.lp-warp { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 950; pointer-events: none; opacity: 0; transition: opacity .3s; }
+.lp-warp.is-on { opacity: 1; }
+.lp-ring { position: fixed; z-index: 940; translate: -50% -50%; border-radius: 50%; pointer-events: none; border: 2px solid #ffc04d;
+  box-shadow: 0 0 26px #ff9a2aaa, inset 0 0 18px #ffd27a66; animation: lp-ring 1.1s cubic-bezier(.2,.8,.2,1) forwards; }
+@keyframes lp-ring { from { scale: .8; opacity: 1; } to { scale: 2.4; opacity: 0; } }
+.lp-replay { position: fixed; z-index: 970; right: 20px; bottom: 20px; padding: 10px 16px; border-radius: 999px; border: 1px solid #ffffff33; background: #1a1222cc; color: #fff; font: inherit; font-size: 13px; cursor: pointer; }
+.lp-replay:hover { background: #2a1d36; }
+
+@media (max-width: 1100px) {
+  .lp-stage { grid-template-columns: 1fr; }
+  .lp-transmission { display: none; }
+  .lp-top-dim { display: none; }
+}
+@media (max-width: 760px) {
+  .lp-bar { padding: 16px; }
+  .lp-brand-words span, .lp-top .lp-top-item:first-child { display: none; }
+  .lp-top-link { padding: 8px 12px; font-size: 11px; }
+  .lp-planet { width: 80vw; right: -24vw; top: 70px; opacity: .55; }
+  .lp-stage { inset: 84px 44px 76px 16px; }
+  .lp-rail { right: 10px; }
+  .lp-tick-label { display: none; }
+  .lp-foot { padding: 14px 16px; }
+  .lp-step:not(.lp-step-next) { display: none; }
+  .lp-step { max-width: 52vw; }
+  .lp-marquee { bottom: 66px; }
+  .lp-mq { font-size: 22px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lp-edit { transition: opacity .3s; } .lp-edit.is-gone { transform: none; }
+  .rk-flame-outer, .rk-flame-inner, .lp-ring, .lp-marquee-strip { animation: none; }
+  .lp-rail-rocket { transition: none; }
+}
+
+/* Cover: far planets drifting around the big AGI planet */
+.lp-cover-sky { position: absolute; inset: 0; }
+.lp-cover-sky .lp-planet-agi { width: min(58vh, 42vw); right: max(-4vw, -60px); top: 9vh; }
+.lp-far { position: absolute; width: var(--size); aspect-ratio: 1; translate: -50% -50%; animation: lp-drift var(--drift) ease-in-out var(--delay) infinite alternate; }
+.lp-far .spin-globe { width: 100%; filter: drop-shadow(0 0 18px color-mix(in srgb, var(--planet-tint) 25%, transparent)); }
+.lp-far-label { position: absolute; left: calc(100% + 14px); top: 50%; translate: 0 -50%; white-space: nowrap; font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 11px; letter-spacing: 2.4px; text-transform: uppercase; color: #f2edf8b3; text-shadow: 0 0 12px #000; }
+.lp-far-label::before { content: ''; display: inline-block; width: 18px; height: 1px; margin-right: 10px; vertical-align: middle; background: #f2edf866; }
+@keyframes lp-drift { 0% { transform: translate(0, 0); } 50% { transform: translate(2.2vw, -1.2vh); } 100% { transform: translate(-1.4vw, 1.4vh); } }
+/* the stage leaves the right half to the planets on the cover */
+.lp-edit[data-scene="cover"] .lp-transmission { margin-top: 34vh; justify-self: start; }
+@media (max-width: 1100px) { .lp-far:nth-of-type(n+4) .lp-far-label { display: none; } }
+@media (max-width: 760px) { .lp-far-label { display: none; } .lp-cover-sky .lp-planet-agi { width: 70vw; right: -22vw; top: 70px; opacity: .55; } .lp-far { opacity: .7; } }
+@media (prefers-reduced-motion: reduce) { .lp-far { animation: none; } }
+
+/* Visibility pass: the Hub's 3D planets stay hidden while reading; the chapter planet is smaller, dimmer and clear of the header,
+   the rail and the typed transmission (which now sits low, under the planet). */
+body.lp-reading #globe-layer { opacity: 0; transition: none; }
+#globe-layer { transition: opacity .9s ease .2s; }
+.lp-edit h1, .lp-edit h2 { text-transform: none; }
+.lp-planet { width: min(46vh, 30vw); right: calc(clamp(20px, 3vw, 44px) + 84px); top: 15vh; filter: brightness(.78) saturate(.9); }
+.lp-cover-sky .lp-planet-agi { width: min(50vh, 34vw); right: calc(clamp(20px, 3vw, 44px) + 84px); top: 14vh; }
+.lp-planet .spin-globe::before { background:
+  radial-gradient(circle at 26% 30%, #ffffff1a 0%, transparent 30%),
+  radial-gradient(circle at 22% 26%, transparent 0%, transparent 30%, #00000099 50%, #000000ea 66%, #000000fc 84%); }
+.lp-planet-glow { box-shadow: -14px -8px 50px -24px color-mix(in srgb, var(--planet-tint) 45%, transparent), 0 0 120px -30px color-mix(in srgb, var(--planet-tint) 18%, transparent); }
+.lp-horizon { top: 74%; height: 26%; }
+.lp-transmission { align-self: end; justify-self: end; margin: 0 0 6px; max-width: 420px; padding: 16px 20px; border-radius: 14px;
+  background: #07040dcc; border: 1px solid #ffffff14; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+.lp-edit[data-scene="cover"] .lp-transmission { margin: 0 0 6px; justify-self: end; }
+.lp-tx-text { min-height: 0; font-size: 12.5px; letter-spacing: 2.2px; }
+
+/* Cover, decluttered: smaller title, no marquee or typed line, small far planets with quiet labels, dimmer AGI */
+.lp-cover-title { font-size: clamp(44px, 5.4vw, 80px); letter-spacing: -1.8px; line-height: 1.02; }
+.lp-edit[data-scene="cover"] .lp-transmission, .lp-marquee { display: none; }
+.lp-edit[data-scene="cover"] .lp-content { align-self: center; }
+.lp-cover-sky .lp-planet-agi { width: min(44vh, 28vw); filter: brightness(.7) saturate(.85); }
+.lp-far .spin-globe { filter: brightness(.85); }
+.lp-far-label { font-size: 10px; letter-spacing: 2px; color: #f2edf880; }
+.lp-far-label::before { width: 12px; margin-right: 8px; background: #f2edf840; }
+
+/* Cover, take 3: the far planets as before (larger, drifting), a smaller AGI planet lit from behind like a slow sunrise,
+   and a gentle camera: a slow push-in plus a little parallax with the pointer (nearer planets move more). */
+.lp-far .spin-globe { filter: none; }
+.lp-far-label { font-size: 11px; letter-spacing: 2.4px; color: #f2edf8b3; }
+.lp-far-label::before { width: 18px; margin-right: 10px; background: #f2edf866; }
+.lp-cover-sky { animation: lp-push 40s ease-in-out infinite alternate; transform-origin: 70% 40%; }
+@keyframes lp-push { from { scale: 1; } to { scale: 1.06; } }
+.lp-far { translate: calc(-50% + var(--cx, 0) * var(--depth, .5) * -26px) calc(-50% + var(--cy, 0) * var(--depth, .5) * -18px); }
+.lp-cover-sky .lp-planet-agi { width: min(34vh, 22vw); right: calc(clamp(20px, 3vw, 44px) + 110px); top: 20vh; filter: none;
+  translate: calc(var(--cx, 0) * -10px) calc(var(--cy, 0) * -7px); }
+/* light from behind and upper left: a thin bright crescent, the rest of the planet in night */
+.lp-cover-sky .lp-planet-agi .spin-globe::before { background:
+  radial-gradient(circle at 18% 22%, #fff3d633 0%, transparent 26%),
+  radial-gradient(circle at 12% 16%, transparent 0%, transparent 34%, #000000b3 52%, #000000f0 64%, #000000fd 80%); }
+.lp-cover-sky .lp-planet-agi .spin-globe::after { box-shadow: inset 3px 3px 4px -1px #fff1c8a8, inset -1px -1px 2px #ffffff0a; }
+.lp-cover-sky .lp-planet-agi .lp-planet-glow { box-shadow: -22px -18px 70px -26px #ffd98a99, -6px -4px 22px -10px #ffe7b366, 0 0 140px -40px #ffcf6e33; }
+@media (max-width: 760px) { .lp-cover-sky .lp-planet-agi { width: 46vw; right: -6vw; top: 80px; } }
+@media (prefers-reduced-motion: reduce) { .lp-cover-sky { animation: none; } }
+
+/* No horizon line: just a soft darkening toward the bottom */
+.lp-horizon { border-top: 0; background: linear-gradient(180deg, transparent, #05030a99 60%, #05030add); }
+.lp-horizon::before { display: none; }
+
+/* Cover: a far galaxy behind the planets (tilted disc, turning very slowly) and a faint band of the Milky Way */
+.lp-milky { position: absolute; inset: -20% -10%; pointer-events: none; opacity: .5;
+  background: linear-gradient(152deg, transparent 38%, #9b82d014 46%, #d8c8ff1f 50%, #9b82d014 54%, transparent 62%);
+  filter: blur(18px); translate: calc(var(--cx, 0) * -4px) calc(var(--cy, 0) * -3px); }
+.lp-galaxy { position: absolute; left: 66%; top: 40%; width: min(64vmin, 46vw); aspect-ratio: 1; translate: calc(-50% + var(--cx, 0) * -6px) calc(-50% + var(--cy, 0) * -4px);
+  transform: rotate(-24deg) scaleY(.38); opacity: .75; pointer-events: none; mix-blend-mode: screen; }
+.lp-galaxy-disc { display: block; width: 100%; height: 100%; animation: lp-galaxy 420s linear infinite; }
+@keyframes lp-galaxy { to { rotate: -360deg; } }
+/* planets travel further, so the movement reads */
+@keyframes lp-drift { 0% { transform: translate(0, 0); } 33% { transform: translate(3.6vw, -2vh); } 66% { transform: translate(1.2vw, 2.4vh); } 100% { transform: translate(-3vw, .6vh); } }
+@media (prefers-reduced-motion: reduce) { .lp-galaxy-disc { animation: none; } }
+
+/* Cover: we stand on a planet. Its huge curved surface fills the bottom of the view (lit rim, turning slowly),
+   the edition info stands on it, and a small figure looks out at the far planets. */
+.lp-ground { position: absolute; left: 50%; top: 70vh; width: 340vmax; aspect-ratio: 1; translate: calc(-50% + var(--cx, 0) * 8px) calc(var(--cy, 0) * 5px);
+  border-radius: 50%; pointer-events: none; z-index: 1;
+  box-shadow: 0 -2px 0 #e9dcff40, 0 -18px 60px -8px #b598ff40, 0 -60px 160px -30px #8c6cff2e; }
+.lp-ground-surface { position: absolute; inset: 0; border-radius: 50%; overflow: hidden;
+  background:
+    radial-gradient(50% 50% at 50% 50%, transparent 97.6%, #e8dcff1a 99.4%, #f4ecff38 100%),
+    linear-gradient(180deg, #8a76b0 0, #4a3c66 .8%, #1d1530 2.6%, #0b0814 5.5%, #050309 10%),
+    url("assets/planets/solar/2k_moon.jpg") 0 0 / 60vmax auto repeat;
+  background-blend-mode: normal, multiply, normal;
+  animation: lp-ground-turn 900s linear infinite; }
+@keyframes lp-ground-turn { to { background-position: 0 0, 0 0, 600vmax 0; } }
+.lp-figure { position: absolute; left: calc(50% + 6vw); top: 0; width: 26px; height: 60px; translate: -50% -100%; margin-top: 3px;
+  filter: drop-shadow(0 0 8px #000) drop-shadow(-2px -1px 6px #c9b4ff33); }
+.lp-figure svg { display: block; width: 100%; height: 100%; }
+.lp-figure::after { content: ''; position: absolute; left: -30px; right: -30px; bottom: -6px; height: 10px; border-radius: 50%; background: radial-gradient(closest-side, #00000099, transparent); }
+/* the info stands on the surface */
+.lp-edit[data-scene="cover"] .lp-horizon { opacity: 0; }
+.lp-edit[data-scene="cover"] .lp-content { align-self: end; margin-bottom: max(0px, calc(30vh - 92px + 26px)); }
+.lp-edit[data-scene="cover"] .lp-stage { z-index: 2; }
+@media (max-width: 760px) { .lp-ground { top: 74vh; } .lp-figure { left: calc(50% + 28vw); } .lp-edit[data-scene="cover"] .lp-content { margin-bottom: max(0px, calc(26vh - 76px + 16px)); } }
+@media (prefers-reduced-motion: reduce) { .lp-ground-surface { animation: none; } }
+
+/* Cover: far away, the Innovation Hub's planets orbit AGI on tilted rings */
+.lp-system { position: absolute; left: 66%; top: 33%; width: min(62vmin, 44vw); aspect-ratio: 1.6; translate: calc(-50% + var(--cx, 0) * -12px) calc(-50% + var(--cy, 0) * -8px); pointer-events: none; }
+.lp-system-rings { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; z-index: 0; }
+.lp-system-rings ellipse { fill: none; stroke: #d6c8f2; stroke-opacity: .14; stroke-width: 1; vector-effect: non-scaling-stroke; }
+.lp-system-sun { position: absolute; left: 50%; top: 50%; right: auto !important; width: 15% !important; translate: -50% -50%; z-index: 2; }
+.lp-system-sun .spin-globe::before { background:
+  radial-gradient(circle at 28% 28%, #fff3d633 0%, transparent 30%),
+  radial-gradient(circle at 26% 26%, transparent 0%, transparent 40%, #00000080 58%, #000000d9 74%, #000000f2 90%); }
+.lp-system-sun .lp-planet-glow { box-shadow: 0 0 40px -6px #ffcf6e88, 0 0 120px -20px #ffcf6e44; }
+.lp-orb { position: absolute; left: 0; top: 0; width: var(--size); aspect-ratio: 1; will-change: transform; }
+.lp-orb .spin-globe { width: 100%; filter: drop-shadow(0 0 10px color-mix(in srgb, var(--planet-tint) 30%, transparent)); }
+.lp-orb .lp-far-label { font-size: 10px; letter-spacing: 2px; }
+.lp-edit .lp-cover-sky .lp-planet-agi, .lp-far { display: none; }
+@media (max-width: 760px) { .lp-system { left: 58%; top: 26%; width: 92vw; } .lp-orb .lp-far-label { display: none; } }
+
+.lp-figure { display: none; }
+
+/* Cover: realistic planets travel across the sky over the horizon (rise, arc, set behind the ground) */
+.lp-cover-sky .lp-orb { position: absolute; left: 0; top: 0; z-index: 0; transition: opacity 2.4s ease; }
+.lp-cover-sky .lp-orb .spin-globe { filter: drop-shadow(0 0 14px color-mix(in srgb, var(--planet-tint) 28%, transparent)); }
+.lp-cover-sky .lp-orb .lp-far-label { font-size: 10.5px; letter-spacing: 2.2px; }
+.lp-ground { z-index: 1; }
+
+/* Realistic light and camera on the travelling planets: one sun (upper right, off screen) lights each planet from its side,
+   giving a soft terminator, a night side, an atmosphere rim on the lit edge and a faint glint; far planets are softer (depth of field). */
+.lp-sun { position: absolute; right: -18vmin; top: -14vmin; width: 70vmin; aspect-ratio: 1; border-radius: 50%; pointer-events: none; z-index: 0;
+  background: radial-gradient(closest-side, #fff6e055 0%, #ffd9a22b 18%, #e9b8ff12 45%, transparent 75%); mix-blend-mode: screen; }
+.lp-cover-sky .lp-orb .spin-globe { filter: none; box-shadow: none; }
+.lp-cover-sky .lp-orb .spin-globe::before { transform: rotate(var(--light, 45deg)); background:
+  radial-gradient(circle at 50% 12%, #fff8ea38 0%, transparent 22%),
+  radial-gradient(circle at 50% -4%, transparent 0%, transparent 46%, #0000008c 60%, #000000e6 72%, #000000fa 86%),
+  radial-gradient(circle at 50% 50%, transparent 60%, #00000066 100%); }
+.lp-cover-sky .lp-orb .spin-globe::after { transform: rotate(var(--light, 45deg)); box-shadow:
+  inset 0 3px 3px -1px color-mix(in srgb, var(--planet-tint) 70%, #fff), inset 0 8px 14px -6px color-mix(in srgb, var(--planet-tint) 45%, transparent); }
+/* atmosphere halo on the lit side only */
+.lp-cover-sky .lp-orb::before { content: ''; position: absolute; inset: -14%; border-radius: 50%; transform: rotate(var(--light, 45deg)); pointer-events: none;
+  background: radial-gradient(circle at 50% 28%, color-mix(in srgb, var(--planet-tint) 30%, transparent) 0%, transparent 58%); filter: blur(6px); opacity: .7; }
+.lp-cover-sky .lp-orb.is-far .spin-globe { filter: blur(.5px) brightness(.85); }
+.lp-cover-sky .lp-orb.is-far .lp-far-label { opacity: .7; }
+
+.lp-cover-sky .lp-far-label { display: none; }
+
+/* ===== Real light on The Edit's planets (the Hub's "no night side" rule is lifted here only) =====
+   Sun in the upper right: a lit crescent and soft terminator, a deep night side with a faint earthshine,
+   a bright atmosphere rim on the lit limb and a glint; the camera pushes in slowly and follows the pointer. */
+.lp-edit .spin-globe { filter: saturate(1.05) contrast(1.08); }
+.lp-edit .spin-globe::before { display: block !important; content: ''; position: absolute; inset: 0; border-radius: 50%; rotate: none;
+  transform: rotate(var(--light, 40deg));
+  background:
+    radial-gradient(circle at 50% 10%, #fff8ea33 0%, transparent 20%),
+    radial-gradient(120% 120% at 50% -8%, transparent 0%, transparent 42%, #06030c80 54%, #06030ce0 64%, #040208f7 76%, #030106 92%),
+    radial-gradient(circle at 50% 108%, #6b5a9a1f 0%, transparent 34%),
+    radial-gradient(circle at 50% 50%, transparent 62%, #0000005c 100%) !important; }
+.lp-edit .spin-globe::after { rotate: none; -webkit-mask-image: none; mask-image: none; transform: rotate(var(--light, 40deg));
+  box-shadow: inset 0 3px 2px -1px color-mix(in srgb, var(--planet-tint, #fff) 65%, #fff), inset 0 10px 18px -8px color-mix(in srgb, var(--planet-tint, #fff) 50%, transparent) !important;
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 30%, transparent 58%); mask-image: linear-gradient(180deg, #000 0%, #000 30%, transparent 58%); }
+/* chapter planet: lit from the upper right, with an atmosphere glow on that side only and a soft shadow into space */
+.lp-sky > .lp-planet { --light: 42deg; translate: calc(var(--px, 0) * -18px) calc(var(--py, 0) * -12px); filter: none;
+  animation: lp-cam 34s ease-in-out infinite alternate; }
+@keyframes lp-cam { from { scale: 1; } to { scale: 1.05; } }
+.lp-sky > .lp-planet .lp-planet-glow { box-shadow: none; transform: rotate(42deg); inset: -10%;
+  background: radial-gradient(circle at 50% 22%, color-mix(in srgb, var(--planet-tint) 34%, transparent) 0%, transparent 56%); filter: blur(14px); }
+.lp-sky > .lp-planet::after { content: ''; position: absolute; inset: -30%; border-radius: 50%; pointer-events: none; z-index: -1;
+  background: radial-gradient(closest-side, #000000a6, transparent 75%); translate: -12% 12%; }
+/* a little sunlight in the upper right corner of every chapter */
+.lp-sky::before { content: ''; position: absolute; right: -20vmin; top: -18vmin; width: 70vmin; aspect-ratio: 1; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(closest-side, #fff4dc40 0%, #ffd9a222 20%, #e9b8ff0f 45%, transparent 75%); }
+.lp-cover-sky .lp-orb { --light: 45deg; }
+@media (prefers-reduced-motion: reduce) { .lp-sky > .lp-planet { animation: none; } }
+
+/* Mission path on the right: clearly visible, with the planet kept well clear of it */
+.lp-sky > .lp-planet { right: calc(clamp(20px, 3vw, 44px) + 150px); }
+.lp-rail { z-index: 5; }
+.lp-rail path { stroke: #e9dcff8c; stroke-width: 1.6; filter: drop-shadow(0 0 4px #b598ff66); }
+.lp-tick::before { background: #e9dcffb3; box-shadow: 0 0 0 3px #0a0612; }
+.lp-tick-label { color: #f2edf8cc; }
+
+/* No spiral galaxy on the cover */
+.lp-galaxy { display: none; }
+
+/* Light flipped: the sun is now in the upper left, so planets are lit on their left side and fall into night on the right */
+.lp-sky > .lp-planet { --light: -42deg; }
+.lp-sky > .lp-planet .lp-planet-glow { transform: rotate(-42deg); }
+.lp-sky > .lp-planet::after { translate: 12% 12%; }
+.lp-sky::before { right: auto; left: -20vmin; }
+.lp-sun { right: auto; left: -18vmin; }
+.lp-cover-sky .lp-orb { --light: -45deg; }
+
+/* ===== Layout mirrored: the mission path and the planet on the left, the story on the right =====
+   The sun is back in the upper right, so each planet's lit side faces the text. */
+.lp-stage { inset: 104px clamp(20px, 5vw, 72px) 92px clamp(80px, 8vw, 120px); grid-template-columns: 1fr minmax(0, 600px); }
+.lp-content { grid-column: 2; grid-row: 1; }
+.lp-transmission { grid-column: 1; grid-row: 1; justify-self: start; }
+.lp-edit[data-scene="cover"] .lp-transmission { justify-self: start; }
+.lp-rail { right: auto; left: clamp(20px, 3vw, 44px); }
+.lp-tick-label { right: auto; left: 30px; }
+.lp-rail-rocket { left: auto; right: calc(50% + 18px); }
+.lp-sky > .lp-planet { right: auto; left: calc(clamp(20px, 3vw, 44px) + 150px); --light: 42deg; }
+.lp-sky > .lp-planet .lp-planet-glow { transform: rotate(42deg); }
+.lp-sky > .lp-planet::after { translate: -12% 12%; }
+.lp-sky::before { left: auto; right: -20vmin; }
+.lp-sun { left: auto; right: -18vmin; }
+.lp-cover-sky .lp-orb { --light: 45deg; }
+@media (max-width: 1100px) { .lp-stage { grid-template-columns: 1fr; } .lp-content { grid-column: 1; } }
+@media (max-width: 760px) {
+  .lp-stage { inset: 84px 16px 76px 44px; }
+  .lp-rail { left: 10px; }
+  .lp-sky > .lp-planet { left: -24vw; right: auto; }
+}
+
+/* Smaller chapter planet, centred beside the story, deeper night side, and a connector to the title */
+.lp-sky > .lp-planet { width: min(34vh, 21vw); top: calc(50vh - min(17vh, 10.5vw) - 10px); animation: none; }
+.lp-edit .lp-sky > .lp-planet .spin-globe::before { background:
+  radial-gradient(circle at 50% 10%, #fff8ea30 0%, transparent 18%),
+  radial-gradient(120% 120% at 50% -8%, transparent 0%, transparent 34%, #06030c99 46%, #06030cf0 56%, #030106fc 68%, #020104 90%),
+  radial-gradient(circle at 50% 108%, #6b5a9a14 0%, transparent 30%),
+  radial-gradient(circle at 50% 50%, transparent 58%, #00000080 100%) !important; }
+.lp-sky > .lp-planet::after { inset: -45%; background: radial-gradient(closest-side, #000000d0, #00000066 55%, transparent 80%); translate: -16% 14%; }
+.lp-link { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none; overflow: visible; opacity: 0; transition: opacity .4s; }
+.lp-link.is-on { opacity: 1; }
+.lp-link path { fill: none; stroke: color-mix(in srgb, var(--tint) 55%, #ffffff30); stroke-width: 1.2; stroke-linecap: round; transition: stroke .9s; }
+.lp-link circle { fill: var(--tint); transition: fill .9s; }
+.lp-link circle:first-of-type { fill: #f2edf8; opacity: .7; }
+.lp-link circle:last-of-type { filter: drop-shadow(0 0 6px var(--tint)); transform-box: fill-box; transform-origin: center; }
+
+/* Planet at the far left, the mission path right beside it; the connector runs from the current chapter to the title */
+.lp-sky > .lp-planet { left: clamp(16px, 2.4vw, 40px); }
+.lp-rail { left: calc(clamp(16px, 2.4vw, 40px) + min(34vh, 21vw) + 46px); height: min(52vh, 460px); }
+.lp-tick-label { opacity: 1; color: #f2edf866; }
+.lp-tick.is-on .lp-tick-label { color: #fff; }
+.lp-stage { left: calc(clamp(16px, 2.4vw, 40px) + min(34vh, 21vw) + 120px); grid-template-columns: 0 minmax(0, 640px); justify-content: end; gap: 0; }
+.lp-transmission { display: none; }
+@media (max-width: 1100px) { .lp-rail { left: clamp(10px, 3vw, 44px); } .lp-stage { left: 72px; grid-template-columns: 1fr; } }
+@media (max-width: 760px) { .lp-rail { left: 10px; } .lp-stage { left: 44px; } }
+
+/* Cover: the mission path and the text sit close together as one group; on a chapter they glide aside to make room for the planet */
+.lp-rail { transition: left .9s cubic-bezier(.22,1,.36,1); }
+.lp-stage { transition: left .9s cubic-bezier(.22,1,.36,1); }
+.lp-edit[data-scene="cover"] .lp-rail { left: max(40px, calc(50vw - 520px)); }
+.lp-edit[data-scene="cover"] .lp-stage { left: calc(max(40px, calc(50vw - 520px)) + 120px); justify-content: start; }
+.lp-tick:focus-visible { outline: 1.5px solid #ffffffb3; outline-offset: 0; border-radius: 50%; }
+@media (max-width: 1100px) { .lp-edit[data-scene="cover"] .lp-rail { left: clamp(10px, 3vw, 44px); } .lp-edit[data-scene="cover"] .lp-stage { left: 72px; } }
+@media (max-width: 760px) { .lp-edit[data-scene="cover"] .lp-rail { left: 10px; } .lp-edit[data-scene="cover"] .lp-stage { left: 44px; } }
+@media (prefers-reduced-motion: reduce) { .lp-rail, .lp-stage { transition: none; } }
+
+/* Cover: the path + text group centred on screen (path 24px, gap 120px, text up to 640px ≈ 784px wide) */
+.lp-edit[data-scene="cover"] .lp-rail { left: max(40px, calc(50vw - 392px)); }
+.lp-edit[data-scene="cover"] .lp-stage { left: calc(max(40px, calc(50vw - 392px)) + 120px); right: max(20px, calc(50vw - 392px)); grid-template-columns: 0 minmax(0, 640px); }
+
+/* Chapters: the story starts close to the mission path (no wide empty gap) */
+.lp-edit:not([data-scene="cover"]) .lp-stage { left: calc(clamp(16px, 2.4vw, 40px) + min(34vh, 21vw) + 46px + 150px); justify-content: start; grid-template-columns: 0 minmax(0, 680px); }
+@media (max-width: 1100px) { .lp-edit:not([data-scene="cover"]) .lp-stage { left: 72px; } }
+@media (max-width: 760px) { .lp-edit:not([data-scene="cover"]) .lp-stage { left: 44px; } }
+
+/* Cover: the title block centred in the middle of the screen (text centred), the path just to its left */
+.lp-edit[data-scene="cover"] .lp-stage { left: max(80px, calc(50vw - 340px)); right: max(20px, calc(50vw - 340px)); grid-template-columns: 0 minmax(0, 680px); justify-content: center; }
+.lp-edit[data-scene="cover"] .lp-scene-cover { align-items: center; text-align: center; }
+.lp-edit[data-scene="cover"] .lp-cover-title { align-items: center; }
+.lp-edit[data-scene="cover"] .lp-actions { justify-content: center; }
+.lp-edit[data-scene="cover"] .lp-rail { left: max(30px, calc(50vw - 440px)); }
+@media (max-width: 1100px) { .lp-edit[data-scene="cover"] .lp-stage { left: 72px; right: 20px; } .lp-edit[data-scene="cover"] .lp-rail { left: clamp(10px, 3vw, 44px); } }
+@media (max-width: 760px) { .lp-edit[data-scene="cover"] .lp-stage { left: 44px; right: 16px; } .lp-edit[data-scene="cover"] .lp-rail { left: 10px; } }
+
+/* Cover: text left-aligned again; the path + text move together to the middle of the screen (group = path 24px + gap 96px + text) */
+.lp-edit[data-scene="cover"] .lp-scene-cover { align-items: flex-start; text-align: left; width: max-content; max-width: min(680px, 100%); }
+.lp-edit[data-scene="cover"] .lp-cover-title { align-items: flex-start; }
+.lp-edit[data-scene="cover"] .lp-actions { justify-content: flex-start; }
+.lp-edit[data-scene="cover"] .lp-rail { left: max(30px, calc(50vw - (var(--cover-w, 640px) + 120px) / 2)); }
+.lp-edit[data-scene="cover"] .lp-stage { left: calc(max(30px, calc(50vw - (var(--cover-w, 640px) + 120px) / 2)) + 96px); right: 20px; justify-content: start; grid-template-columns: 0 minmax(0, 680px); }
+@media (max-width: 1100px) { .lp-edit[data-scene="cover"] .lp-stage { left: 72px; } .lp-edit[data-scene="cover"] .lp-rail { left: clamp(10px, 3vw, 44px); } }
+@media (max-width: 760px) { .lp-edit[data-scene="cover"] .lp-stage { left: 44px; } .lp-edit[data-scene="cover"] .lp-rail { left: 10px; } }
+
+/* A little more room between the mission path and the text */
+.lp-edit[data-scene="cover"] .lp-rail { left: max(30px, calc(50vw - (var(--cover-w, 640px) + 180px) / 2)); }
+.lp-edit[data-scene="cover"] .lp-stage { left: calc(max(30px, calc(50vw - (var(--cover-w, 640px) + 180px) / 2)) + 156px); }
+.lp-edit:not([data-scene="cover"]) .lp-stage { left: calc(clamp(16px, 2.4vw, 40px) + min(34vh, 21vw) + 46px + 200px); }
+@media (max-width: 1100px) { .lp-edit[data-scene="cover"] .lp-stage, .lp-edit:not([data-scene="cover"]) .lp-stage { left: 84px; } .lp-edit[data-scene="cover"] .lp-rail { left: clamp(10px, 3vw, 44px); } }
+@media (max-width: 760px) { .lp-edit[data-scene="cover"] .lp-stage, .lp-edit:not([data-scene="cover"]) .lp-stage { left: 52px; } .lp-edit[data-scene="cover"] .lp-rail { left: 10px; } }
+
+/* Cover: the path aligned to the text block (kicker at the top, buttons at the bottom); the block sits a little lower, nearer the ground */
+.lp-edit[data-scene="cover"] .lp-content { margin-bottom: max(0px, calc(30vh - 92px - 10px)); }
+.lp-edit[data-scene="cover"] .lp-rail { top: calc(var(--cover-top, 30vh) + 8px); height: calc(var(--cover-h, 50vh) - 16px); translate: 0 0; transition: left .9s cubic-bezier(.22,1,.36,1), top .6s ease, height .6s ease; }
+.lp-edit[data-scene="cover"] .lp-rail { top: var(--cover-top, 30vh); height: var(--cover-h, 50vh); }
+
+/* Cover: the text block stands lower, on the turning planet at the bottom (title over the horizon, buttons on the surface) */
+.lp-edit[data-scene="cover"] .lp-content { margin-bottom: 4px; }
+.lp-edit[data-scene="cover"] .lp-scene-cover .lp-standfirst, .lp-edit[data-scene="cover"] .lp-kicker { text-shadow: 0 1px 12px #000c; }
+.lp-ground { top: 62vh; }
+
+.lp-brand-words strong { display: inline-flex; align-items: center; }
+.lp-brand-sep { margin: 0 10px; font-weight: 300; color: #f2edf866; }
+
+/* Saturn: rings tilted toward us; the back half passes behind the planet, the front half across it */
+.lp-cover-sky .lp-orb.has-rings .spin-globe { z-index: 1; }
+.lp-rings { position: absolute; left: 50%; top: 50%; width: 455%; aspect-ratio: 1; translate: -50% -50%; transform: rotate(-16deg) scaleY(.26); pointer-events: none; }
+.lp-rings canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.lp-ring-back { z-index: 0; clip-path: inset(0 0 50% 0); filter: brightness(.62); }
+.lp-ring-front { z-index: 2; clip-path: inset(50% 0 0 0); }
+.lp-cover-sky .lp-orb.has-rings { isolation: isolate; }
+.lp-cover-sky .lp-orb.has-rings .lp-rings { z-index: 0; }
+.lp-cover-sky .lp-orb.has-rings .spin-globe { z-index: 1; }
+.lp-cover-sky .lp-orb.has-rings .lp-rings.is-back { z-index: 0; }
+.lp-cover-sky .lp-orb.has-rings .lp-rings.is-front { z-index: 2; }
+
+/* ===== Chapters: no planet on the left, only the ground planet at the bottom (lower than on the cover) =====
+   The ground now lives on the page (not inside the cover sky), sits a little lower and glides further down on chapters. */
+.lp-edit > .lp-ground { z-index: 1; top: 68vh; translate: calc(-50% + var(--px, 0) * 8px) calc(var(--py, 0) * 5px); transition: top 1.2s cubic-bezier(.22,1,.36,1); }
+.lp-edit:not([data-scene="cover"]) > .lp-ground { top: 84vh; }
+.lp-edit .lp-horizon { display: none; }
+.lp-edit .lp-stage { z-index: 2; }
+/* chapters: the path + story group sits centred, now that the left planet is gone */
+.lp-edit:not([data-scene="cover"]) .lp-rail { left: max(30px, calc(50vw - 480px)); }
+.lp-edit:not([data-scene="cover"]) .lp-stage { left: calc(max(30px, calc(50vw - 480px)) + 200px); right: 20px; }
+@media (max-width: 1100px) { .lp-edit:not([data-scene="cover"]) .lp-rail { left: clamp(10px, 3vw, 44px); } .lp-edit:not([data-scene="cover"]) .lp-stage { left: 84px; } }
+@media (max-width: 760px) { .lp-edit:not([data-scene="cover"]) .lp-rail { left: 10px; } .lp-edit:not([data-scene="cover"]) .lp-stage { left: 52px; } }
+@media (prefers-reduced-motion: reduce) { .lp-edit > .lp-ground { transition: none; } }
+
+/* Cover: text block (and the path with it) a bit higher */
+.lp-edit[data-scene="cover"] .lp-content { margin-bottom: 11vh; }

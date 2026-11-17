@@ -14,5 +14,7 @@ window.ATLAS_UNIVERSE = {
       description: 'Technology use cases for the foods and agriculture business are being prepared.' },
     { id: 'automotive', icon: 'car', name: 'Mobility & Automotive', status: 'coming-soon', surface: 'storm', strip: 'assets/planets/solar/2k_moon.jpg',
       description: 'Technology use cases for the mobility and automotive business are being prepared.' },
+    { id: 'property', icon: 'building', name: 'Property & Hospitality', status: 'coming-soon', surface: 'cratered', strip: 'assets/planets/solar/2k_moon.jpg',
+      description: 'Technology use cases for the property and hospitality business are being prepared.' },
   ],
 };

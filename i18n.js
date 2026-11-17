@@ -13,9 +13,9 @@
 
   // ---------- Interface dictionary (exact English → Arabic) ----------
   const D = {
-    'Skip to solar system': 'انتقل إلى المجموعة الشمسية', 'Tech Incubation Hub': 'مركز احتضان التقنيات', 'Tech Incubation Hub home': 'الصفحة الرئيسية لمركز احتضان التقنيات',
+    'Skip to solar system': 'انتقل إلى المجموعة الشمسية', 'Tech Incubation Hub': 'مركز احتضان التقنيات', 'Technology use cases': 'حالات استخدام التقنية', 'Al Ghurair': 'الغرير', 'Tech Incubation Hub home': 'الصفحة الرئيسية لمركز احتضان التقنيات',
     'Service': 'الخدمات', 'Internal': 'الداخلية', 'Search use cases': 'ابحث في حالات الاستخدام', 'AGI': 'AGI', 'Al Ghurair Investment': 'الغرير للاستثمار',
-    'Facilities': 'المرافق', 'Healthcare': 'الرعاية الصحية', 'Foods & Agriculture': 'الأغذية والزراعة', 'Mobility & Automotive': 'التنقل والسيارات', 'Coming soon': 'قريبًا', 'Live': 'متاح', 'Explore': 'استكشف',
+    'Facilities': 'المرافق', 'Healthcare': 'الرعاية الصحية', 'Foods & Agriculture': 'الأغذية والزراعة', 'Mobility & Automotive': 'التنقل والسيارات', 'Property & Hospitality': 'العقارات والضيافة', 'Coming soon': 'قريبًا', 'Live': 'متاح', 'Explore': 'استكشف',
     'Technology use cases for facilities management services and operations.': 'حالات استخدام التقنية لخدمات وعمليات إدارة المرافق.',
     'Technology use cases for the healthcare business are being prepared.': 'يجري إعداد حالات استخدام التقنية لقطاع الرعاية الصحية.',
     'Technology use cases for the foods and agriculture business are being prepared.': 'يجري إعداد حالات استخدام التقنية لقطاع الأغذية والزراعة.',
@@ -111,7 +111,7 @@
     [/^(.+)\. (Established|Scaling|Emerging)\. Open description and value realised\.$/, (m, x, s) => `${x}. ${stageAr[s]}. افتح الوصف والقيمة المحققة.`],
     [/^(.+)\. (\d+) use cases? across maturity levels\. Explore family\.$/, (m, x, n) => `${t(x)}. ${cases(+n)} عبر مستويات النضج. استكشف العائلة.`],
     [/^(.+), (\d+) use cases?, (service|internal)$/, (m, x, n, c) => `${t(x)}، ${cases(+n)}، ${c === 'service' ? 'الخدمات' : 'الداخلية'}`],
-    [/^(Facilities|Healthcare|Foods & Agriculture|Mobility & Automotive)\. (Open Facilities|Coming soon)\.$/, (m, x, y) => `${t(x)}. ${t(y)}.`],
+    [/^(Facilities|Healthcare|Foods & Agriculture|Mobility & Automotive|Property & Hospitality)\. (Open Facilities|Coming soon)\.$/, (m, x, y) => `${t(x)}. ${t(y)}.`],
     [/^(Collection|Service group|Maturity|Technology domain): (.+)$/, (m, a, b) => `${t(a)}: ${t(b)}`],
     [/^About (Service|Internal) use cases$/, (m, c) => `عن حالات استخدام ${t(c)}`],
   ];
