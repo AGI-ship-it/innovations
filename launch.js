@@ -234,7 +234,8 @@
 
     // Top: brand on the left, the mission on the right (synced with the Innovation Hub).
     const bar = el('header', 'lp-bar');
-    const brand = el('div', 'lp-brand');
+    const brand = el('button', 'lp-brand'); brand.type = 'button'; brand.setAttribute('aria-label', 'Al Ghurair | The Edit: back to the cover');
+    brand.addEventListener('click', () => show(0));
     const tile = el('span', 'lp-brand-tile'), mark = el('img'); mark.src = 'assets/mark-white.svg?v=2'; mark.alt = ''; mark.width = mark.height = 22; tile.append(mark);
     const words = el('span', 'lp-brand-words'); const name = el('strong'); name.append(document.createTextNode('Al Ghurair'), el('span', 'lp-brand-sep', '|'), document.createTextNode('The Edit'));
     words.append(name, el('span', '', `Edition ${EDITION.number} · ${EDITION.date}`));

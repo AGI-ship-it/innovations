@@ -520,3 +520,8 @@ body.lp-reading #globe-layer { opacity: 0; transition: none; }
 .lp-edit .lp-launch { background: linear-gradient(180deg, #7a3fe0, #5521b5); color: #fff;
   box-shadow: inset 0 1px 0 #ffffff40, 0 0 0 1px #a77bff55, 0 10px 28px #5a22b866; }
 .lp-edit .lp-launch:hover { box-shadow: inset 0 1px 0 #ffffff4d, 0 0 0 1px #c3a2ff99, 0 12px 34px #7a3fe08c; }
+
+/* The brand is a button back to the cover */
+.lp-edit .lp-brand { padding: 0; border: 0; background: none; cursor: pointer; text-align: left; border-radius: 14px; }
+.lp-edit .lp-brand:hover .lp-brand-tile { background: #ffffff1a; border-color: #ffffff40; }
+.lp-edit .lp-brand-tile { transition: background .2s, border-color .2s; }
