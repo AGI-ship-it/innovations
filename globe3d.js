@@ -13,7 +13,7 @@
   try { renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: 'high-performance' }); }
   catch { return; }
   renderer.setClearColor(0x000000, 0);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
   const scene = new THREE.Scene();
   const camera = new THREE.OrthographicCamera(0, 1, 0, -1, -10000, 10000);
   const geometry = new THREE.SphereGeometry(1, 64, 40);
@@ -175,8 +175,9 @@
 
   function frame(now) {
     requestAnimationFrame(frame);
+    if (now - last < 31) return; // ~30 fps
     const dt = Math.min(.05, (now - last) / 1000); last = now;
-    if (document.hidden) return;
+    if (document.hidden || document.body.classList.contains('lp-reading')) return;
     if (!still()) clock += dt;
     const seen = new Set(); centres.clear();
     document.querySelectorAll('.spin-globe').forEach(node => {

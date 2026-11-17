@@ -172,8 +172,12 @@
     wrap.append(el('div', 'lp-sun'));
     const t0 = performance.now();
     let camT = 0;
+    let lastT = 0;
     const frame = now => {
       if (!wrap.isConnected) return;
+      const editEl = wrap.closest('.lp-edit');
+      if (editEl && (editEl.hidden || editEl.classList.contains('is-gone')) || document.hidden || now - lastT < 31) { requestAnimationFrame(frame); return; }
+      lastT = now;
       const W = innerWidth, H = innerHeight, horizon = H * .68, t = (now - t0) / 1000;
       const sunX = W * 1.04, sunY = H * .12;
       // the camera: a slow sway (a few pixels), plus the pointer; nearer planets move more (parallax)

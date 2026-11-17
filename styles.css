@@ -3599,3 +3599,6 @@ html.sky-ready .cosmic-sky .nebula-sky { transition: opacity .9s ease; }
 
 /* Home uses the same galaxy sky as Facilities and the inner pages (the home nebula is no longer shown) */
 .cosmic-sky .nebula-sky, body.is-universe .cosmic-sky .nebula-sky, html.sky-home-start:not(.sky-ready) .cosmic-sky .nebula-sky { opacity: 0 !important; display: none; }
+
+/* Performance: CSS globes replaced by the 3D layer stop their background animation (it repainted every frame for nothing) */
+.spin-globe.is-3d { animation: none !important; }

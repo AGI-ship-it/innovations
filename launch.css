@@ -504,3 +504,6 @@ body.lp-reading #globe-layer { opacity: 0; transition: none; }
 
 /* Cover: text block (and the path with it) a bit higher */
 .lp-edit[data-scene="cover"] .lp-content { margin-bottom: 11vh; }
+
+/* Performance: the huge ground surface no longer repaints every frame (static texture) */
+.lp-ground-surface { animation: none !important; }

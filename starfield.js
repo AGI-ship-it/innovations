@@ -180,6 +180,7 @@
     let timer = 0; addEventListener('resize', () => { clearTimeout(timer); timer = setTimeout(size, 200); });
     size();
     function frame(now) {
+      if (now - last < 31 || document.hidden) { requestAnimationFrame(frame); return; } // ~30 fps
       const dt = Math.min(.05, (now - last) / 1000), t = now / 1000, calm = still(); last = now;
       g.clearRect(0, 0, W, H);
       if (!calm) { px += (aimX - px) * (1 - Math.exp(-dt * 1.6)); py += (aimY - py) * (1 - Math.exp(-dt * 1.6)); }

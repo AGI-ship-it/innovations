@@ -604,6 +604,9 @@
     container.addEventListener('pointerup', endDrag); container.addEventListener('pointercancel', endDrag);
     container.addEventListener('click', event => { if (swallowClick) { event.stopPropagation(); event.preventDefault(); swallowClick = false; } }, true);
     function animate(timestamp) {
+      // ~30 fps is plenty for slow orbits (halves the work); full rate only while dragging
+      if (previous !== null && !drag && timestamp - previous < 31) { frame = requestAnimationFrame(animate); return; }
+      if (document.body.classList.contains('lp-reading')) { previous = timestamp; frame = requestAnimationFrame(animate); return; }
       const elapsed = previous === null ? 0 : Math.min((timestamp - previous) / 1000, .05); previous = timestamp;
       // momentum after a drag
       if (!drag && Math.abs(spinVelocity) > .0005 && !reduced.matches) { turnAll(spinVelocity * elapsed); spinVelocity *= Math.pow(.06, elapsed); } else if (!drag) spinVelocity = 0;
