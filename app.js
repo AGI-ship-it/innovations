@@ -1191,7 +1191,7 @@
     renderScene();
     if (records.some(record => `#${record.id}` === location.hash)) history.replaceState(null, '', routeFor());
     if (restore && returnOrigin === 'index') {
-      byId('browse-dialog').showModal();
+      anchorBrowse(); byId('browse-dialog').showModal();
       byId('browse-list').scrollTop = indexScroll;
       byId('browse-dialog').scrollTop = indexDialogScroll;
     }
@@ -1255,10 +1255,50 @@
     byId('domain-filter').value = browse.domain;
     byId('browse-stage-filter').value = browse.maturity;
     renderBrowser();
-    byId('browse-dialog').showModal();
+    openBrowse();
     byId('search').focus();
   });
-  byId('browse-close').addEventListener('click', () => byId('browse-dialog').close());
+  // Panels open in place: the search index and About the research are anchored at their header buttons (top right)
+  // and grow out of them, folding back into the button on close (like The Edit's chapters list).
+  const wideScreen = () => window.innerWidth > 760;
+  const motionOn = () => wideScreen() && !reducedMotion.matches && !starsPaused;
+  function inPlace(dialog, anchorId) {
+    let anim = null;
+    const anchor = () => byId(anchorId);
+    function place() {
+      const b = anchor().getBoundingClientRect();
+      dialog.style.setProperty('--b-top', `${Math.max(8, b.top - 8)}px`);
+      dialog.style.setProperty('--b-right', `${Math.max(8, window.innerWidth - b.right - 8)}px`);
+      dialog.classList.toggle('is-anchored', wideScreen());
+    }
+    function fold() {
+      const b = anchor().getBoundingClientRect(), r = dialog.getBoundingClientRect();
+      return `inset(${Math.max(0, b.top - r.top)}px ${Math.max(0, r.right - b.right)}px ${Math.max(0, r.bottom - b.bottom)}px ${Math.max(0, b.left - r.left)}px round 14px)`;
+    }
+    function open() {
+      place(); anim?.cancel(); anim = null;
+      dialog.showModal();
+      if (!motionOn()) return;
+      anim = dialog.animate([{ clipPath: fold(), opacity: .5 }, { clipPath: 'inset(0 0 0 0 round 22px)', opacity: 1 }], { duration: 520, easing: 'cubic-bezier(.22,1,.36,1)' });
+      try { dialog.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 320, pseudoElement: '::backdrop' }); } catch { /* no ::backdrop animation */ }
+      dialog.querySelectorAll(':scope > *').forEach((child, k) => child.animate([{ opacity: 0, transform: 'translateY(-6px)' }, { opacity: 1, transform: 'none' }], { duration: 360, delay: 120 + Math.min(k, 5) * 40, easing: 'cubic-bezier(.22,1,.36,1)', fill: 'backwards' }));
+      anim.finished.then(() => { anim = null; }, () => {});
+    }
+    function close() {
+      if (!dialog.open) return;
+      if (!motionOn()) { dialog.close(); return; }
+      anim?.cancel();
+      anim = dialog.animate([{ clipPath: 'inset(0 0 0 0 round 22px)', opacity: 1 }, { clipPath: fold(), opacity: 0 }], { duration: 340, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards' });
+      try { dialog.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 340, pseudoElement: '::backdrop', fill: 'forwards' }); } catch { /* no ::backdrop animation */ }
+      anim.finished.then(() => { dialog.close(); dialog.getAnimations().forEach(a => a.cancel()); anim = null; }, () => {});
+    }
+    dialog.addEventListener('cancel', event => { if (motionOn()) { event.preventDefault(); close(); } });
+    window.addEventListener('resize', () => { if (dialog.open) place(); });
+    return { open, close, place };
+  }
+  const browsePanel = inPlace(byId('browse-dialog'), 'overview-all'), aboutPanel = inPlace(byId('about-dialog'), 'about-open');
+  const openBrowse = browsePanel.open, closeBrowse = browsePanel.close, anchorBrowse = browsePanel.place;
+  byId('browse-close').addEventListener('click', closeBrowse);
   byId('browse-dialog').addEventListener('close', () => {
     // Reopening the index from an inline case changes the browser's native return target.
     if (!byId('browse-dialog').open && detail.hidden) byId('overview-all').focus({ preventScroll: true });
@@ -1278,8 +1318,8 @@
   byId('reset-filters').addEventListener('click', resetBrowser);
   byId('empty-reset').addEventListener('click', () => { resetBrowser(); byId('search').focus(); });
   document.querySelector('.brand').addEventListener('click', event => { event.preventDefault(); showUniverse(); pushRoute(); byId('universe-heading').focus({ preventScroll: true }); window.scrollTo(0, 0); });
-  ['about-open'].forEach(id => byId(id).addEventListener('click', () => byId('about-dialog').showModal()));
-  byId('about-close').addEventListener('click', () => byId('about-dialog').close());
+  byId('about-open').addEventListener('click', aboutPanel.open);
+  byId('about-close').addEventListener('click', aboutPanel.close);
   function openLinkedCase() {
     const linkedRecord = records.find(record => record.id === location.hash.slice(1));
     if (!linkedRecord) return;

@@ -166,7 +166,7 @@
     tracks.forEach((t, el) => { if (!seen.has(el)) { scene.remove(t.line); t.line.geometry.dispose(); t.line.material.dispose(); tracks.delete(el); } });
   }
 
-  let W = 0, H = 0, clock = 0, last = performance.now();
+  let W = 0, H = 0, clock = 0, last = performance.now(), tick = 0;
   function size() {
     W = innerWidth; H = innerHeight; renderer.setSize(W, H, false);
     camera.left = 0; camera.right = W; camera.top = 0; camera.bottom = -H; camera.updateProjectionMatrix();
@@ -175,7 +175,8 @@
 
   function frame(now) {
     requestAnimationFrame(frame);
-    if (now - last < 31) return; // ~30 fps
+    if (now - last < 40) return; // ~24 fps
+    tick++;
     const dt = Math.min(.05, (now - last) / 1000); last = now;
     if (document.hidden || document.body.classList.contains('lp-reading')) return;
     if (!still()) clock += dt;
@@ -189,8 +190,9 @@
       seen.add(node);
       const r = box.width / 2;
       // One read of the planet's styles: its light angle, colour and depth dimming are inherited custom properties.
-      const cs = getComputedStyle(node), host = node.closest('.family-world, .usecase-moon, .service-sun, .universe-world');
-      const hs = host ? getComputedStyle(host) : null;
+      const host = node.closest('.family-world, .usecase-moon, .service-sun, .universe-world');
+      if (!entry.styles || (tick + entry.phase * 100 | 0) % 8 === 0) entry.styles = { cs: getComputedStyle(node), hs: host ? getComputedStyle(host) : null };
+      const { cs, hs } = entry.styles;
       // Stack order: the planet's own z-index (home: in front of or behind AGI), then its size.
       const z = (parseInt(hs?.zIndex, 10) || 2) * 1200 + r;
       entry.group.position.set(box.left + r, -(box.top + r), z);

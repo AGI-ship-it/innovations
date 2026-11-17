@@ -156,6 +156,11 @@
 
   function animateSky(canvas, painted) {
     const g = canvas.getContext('2d'), rand = seeded(20261122);
+    // one soft glow sprite per star colour, drawn with alpha (much cheaper than a new gradient per star per frame)
+    const sprites = new Map();
+    const sprite = c => { let s = sprites.get(c); if (s) return s;
+      s = document.createElement('canvas'); s.width = s.height = 32; const x = s.getContext('2d'), rgb = c.map(v => Math.round(v * 255)).join(','), gr = x.createRadialGradient(16, 16, 0, 16, 16, 16);
+      gr.addColorStop(0, `rgba(${rgb},1)`); gr.addColorStop(.3, `rgba(${rgb},.3)`); gr.addColorStop(1, `rgba(${rgb},0)`); x.fillStyle = gr; x.fillRect(0, 0, 32, 32); sprites.set(c, s); return s; };
     let W = 0, H = 0, dpr = 1, twinkle = [], near = [], meteors = [], next = performance.now() + 2500, px = 0, py = 0, aimX = 0, aimY = 0, last = performance.now();
     const TW = [[.9, .95, 1], [1, .85, .95], [.88, .82, 1]], NEAR = [[.8, .92, 1], [.85, .78, 1], [1, .75, .92]], TINT = ['255,255,255', '223,243,255', '214,196,255', '255,200,236', '227,212,255'];
     function size() {
@@ -187,10 +192,9 @@
       // parallax: the far painted sky slides a little against the pointer, near layers more
       if (painted) painted.style.transform = `translate(${(-px * 7).toFixed(2)}px, ${(-py * 4.5).toFixed(2)}px) scale(1.02)`;
       g.globalCompositeOperation = 'lighter';
-      twinkle.forEach((s, i) => { const o = calm ? .7 : .45 + .55 * Math.sin(t * s.f + s.p) ** 2, x = s.x - px * 12 * s.depth, y = s.y - py * 8 * s.depth;
-        const gr = g.createRadialGradient(x, y, 0, x, y, s.r * 3.4); gr.addColorStop(0, `rgba(${s.c.map(v => Math.round(v * 255)).join(',')},${o.toFixed(3)})`);
-        gr.addColorStop(.3, `rgba(${s.c.map(v => Math.round(v * 255)).join(',')},${(o * .3).toFixed(3)})`); gr.addColorStop(1, 'rgba(0,0,0,0)');
-        g.fillStyle = gr; g.fillRect(x - s.r * 3.4, y - s.r * 3.4, s.r * 6.8, s.r * 6.8); });
+      twinkle.forEach(s => { const o = calm ? .7 : .45 + .55 * Math.sin(t * s.f + s.p) ** 2, x = s.x - px * 12 * s.depth, y = s.y - py * 8 * s.depth, R = s.r * 3.4;
+        g.globalAlpha = o; g.drawImage(sprite(s.c), x - R, y - R, R * 2, R * 2); });
+      g.globalAlpha = 1;
       const R = Math.hypot(W, H) / 2;
       near.forEach((s, i) => { if (!calm) { s.d += s.v * dt * (.3 + s.d * 1.6); if (s.d > 1.05) { near[i] = s = spawnNear(false); } }
         const x = W / 2 + Math.cos(s.a) * s.d * R - px * 22 * s.d, y = H * .5 + Math.sin(s.a) * s.d * R - py * 14 * s.d, r = .35 + s.d * 1.5, o = s.b * Math.min(1, s.d * 6) * .8;

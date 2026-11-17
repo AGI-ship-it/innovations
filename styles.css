@@ -3602,3 +3602,16 @@ html.sky-ready .cosmic-sky .nebula-sky { transition: opacity .9s ease; }
 
 /* Performance: CSS globes replaced by the 3D layer stop their background animation (it repainted every frame for nothing) */
 .spin-globe.is-3d { animation: none !important; }
+
+/* Search index opens in place at the search button (top right), like The Edit's chapters list */
+@media (min-width: 761px) {
+  #browse-dialog.is-anchored { position: fixed; margin: 0; inset: var(--b-top, 16px) var(--b-right, 16px) auto auto; max-height: calc(100vh - var(--b-top, 16px) - 16px); }
+  #browse-dialog.is-anchored::backdrop { background: #08070e80; backdrop-filter: blur(4px); }
+}
+@media (min-width: 761px) {
+  #about-dialog.is-anchored { position: fixed; margin: 0; inset: var(--b-top, 16px) var(--b-right, 16px) auto auto; max-height: calc(100vh - var(--b-top, 16px) - 16px); overflow: auto; }
+  #about-dialog.is-anchored::backdrop { background: #08070e80; backdrop-filter: blur(4px); }
+}
+
+/* Performance: orbit paths are drawn by the 3D layer, so their SVG blur filter is not needed */
+html.has-3d-globes .universe-map .family-track, html.has-3d-globes .family-track { filter: none !important; }

@@ -1,6 +1,7 @@
 /* One family per collection/domain. Case tracks alone encode maturity. */
 (() => {
   'use strict';
+  let occlusionTick = 0; // the behind-AGI label check runs every 4th frame
   const stages = ['Established', 'Scaling', 'Emerging'];
   const names = {
     'Workforce Management / Mobile FM Apps': 'Workforce management',
@@ -288,8 +289,10 @@
             button.style.zIndex = always ? '4' : node.behind ? '1' : '3';
             // Behind the AGI globe its sphere is hidden by the globe, so its name steps back too (and takes no clicks).
             // Measured on screen: hide the name when any part of it (or the planet) overlaps the globe's circle.
-            let hidden = false;
-            if (node.behind && !always) {
+            let hidden = button.classList.contains('is-occluded');
+            if (!node.behind || always) hidden = false;
+            else if ((occlusionTick++ & 3) === 0) {
+              hidden = false;
               const globe = (centre.querySelector('.service-sun .spin-globe') || centre.querySelector('.service-sun') || centre).getBoundingClientRect();
               const gx = globe.left + globe.width / 2, gy = globe.top + globe.height / 2, gr = globe.width / 2 + 4;
               hidden = [...button.querySelectorAll('.family-name, .family-count, .planet-body .spin-globe')].some(part => {
