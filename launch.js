@@ -323,10 +323,29 @@
     edit.append(link, bar, stage, rail, marquee, foot, panel);
 
     let lastFocus = null;
+    // The chapters list grows out of the Chapters button, in place (and folds back into it on close).
+    let panelAnim = null;
     function togglePanel(open) {
-      panel.hidden = !open; chaptersBtn.setAttribute('aria-expanded', String(open));
-      if (open) { lastFocus = document.activeElement; panel.querySelector('.lp-list-item')?.focus(); if (!reduced()) panelInner.animate([{ opacity: 0, transform: 'translateY(16px)' }, { opacity: 1, transform: 'none' }], { duration: 380, easing: 'cubic-bezier(.22,1,.36,1)' }); }
-      else lastFocus?.focus?.();
+      if (open === !panel.hidden && !panelAnim) return;
+      chaptersBtn.setAttribute('aria-expanded', String(open));
+      const fold = () => { const b = chaptersBtn.getBoundingClientRect(), r = panelInner.getBoundingClientRect();
+        return `inset(${Math.max(0, b.top - r.top - 8)}px ${Math.max(0, r.right - b.right - 12)}px ${Math.max(0, r.bottom - b.bottom - 8)}px ${Math.max(0, b.left - r.left - 12)}px round 999px)`; };
+      panelAnim?.cancel(); panelAnim = null;
+      if (open) {
+        panel.hidden = false; lastFocus = document.activeElement;
+        if (!reduced()) {
+          panel.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, easing: 'ease-out' });
+          panelAnim = panelInner.animate([{ clipPath: fold(), opacity: .4 }, { clipPath: 'inset(0 0 0 0 round 20px)', opacity: 1 }], { duration: 520, easing: 'cubic-bezier(.22,1,.36,1)' });
+          panelInner.querySelectorAll('.lp-list li').forEach((li, k) => li.animate([{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }], { duration: 360, delay: 140 + k * 40, easing: 'cubic-bezier(.22,1,.36,1)', fill: 'backwards' }));
+          panelAnim.finished.then(() => { panelAnim = null; }, () => {});
+        }
+        panel.querySelector('.lp-list-item')?.focus({ preventScroll: true });
+      } else {
+        if (reduced()) { panel.hidden = true; lastFocus?.focus?.(); return; }
+        panel.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 340, easing: 'ease-in', fill: 'forwards' });
+        panelAnim = panelInner.animate([{ clipPath: 'inset(0 0 0 0 round 20px)', opacity: 1 }, { clipPath: fold(), opacity: 0 }], { duration: 360, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards' });
+        panelAnim.finished.then(() => { panel.hidden = true; panel.getAnimations().forEach(a => a.cancel()); panelAnim?.cancel(); panelAnim = null; lastFocus?.focus?.(); }, () => {});
+      }
     }
     chaptersBtn.addEventListener('click', () => togglePanel(panel.hidden));
     closePanel.addEventListener('click', () => togglePanel(false));
