@@ -3,6 +3,10 @@
   'use strict';
   const root = document.documentElement;
   root.dataset.theme = 'dark';
+  // The launch page is the site's front door: it shows on a plain visit (no route in the hash) or with ?launch.
+  // ?hub (or any #route, e.g. a shared use case link) opens the Emerging Tech Radar directly.
+  const q = new URLSearchParams(location.search);
+  window.ATLAS_LANDING = q.has('launch') || (!q.has('hub') && (!location.hash || location.hash === '#'));
   root.style.colorScheme = 'dark';
   // Clear any light-mode choice saved by earlier versions.
   try { localStorage.removeItem('atlas-theme'); } catch { /* storage unavailable */ }

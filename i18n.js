@@ -189,7 +189,7 @@
     addToggle();
     if (lang !== 'ar') return;
     translateNode(document.body);
-    document.title = new URLSearchParams(location.search).has('launch') ? 'الغرير | مركز احتضان التقنيات' : 'الغرير — مركز الابتكار';
+    document.title = window.ATLAS_LANDING ? 'الغرير | مركز احتضان التقنيات' : 'الغرير — مركز الابتكار';
     new MutationObserver(records => records.forEach(record => {
       if (record.type === 'characterData') translateNode(record.target);
       else if (record.type === 'attributes') translateNode(record.target);

@@ -4,7 +4,7 @@
 (() => {
   'use strict';
   const params = new URLSearchParams(location.search);
-  if (!params.has('launch')) return;
+  if (!window.ATLAS_LANDING) return;
 
   const VIEW_KEY = 'tih-view';
   const NEWSROOM = 'https://al-ghurair.com/en/newsroom-hub';

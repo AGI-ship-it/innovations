@@ -2,7 +2,7 @@
    Innovation Hub. The launch page drops away, stars streak past, and the rocket flies a gravity turn to the AGI planet. */
 (() => {
   'use strict';
-  if (!new URLSearchParams(location.search).has('launch')) return;
+  if (!window.ATLAS_LANDING) return;
   const TARGET = 'agi'; // the Al Ghurair Investment planet at the centre of the Hub
   const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches || document.body.classList.contains('stars-paused');
   const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
