@@ -33,7 +33,10 @@
   // Light (day) theme uses realistic illustrated surfaces, one per family.
   const daySurface = { 'ai-ml': 'amethyst', iot: 'uranus', bms: 'neptune', esg: 'forest', workforce: 'golden', genai: 'rose', cleaning: 'ocean',
     drones: 'storm', frontline: 'mars', wearables: 'lava', vision: 'alien', arvr: 'jupiter', printing: 'desert', twins: 'earth' };
-  const look = domain => { const [slug, colour] = looks[domain] || ['ai-ml', '#8b5cf6']; return { texture: `assets/planets/families/${slug}.png?v=2`, strip: `assets/planets/families/strip-${slug}.png`, day: `assets/planets/surfaces/${daySurface[slug] || 'moon'}.jpg`, colour }; };
+  // Muted, natural surfaces (bands, contour ground, mottled rock), one per family, on every view.
+  const natural = { 'ai-ml': 'slate-bands', iot: 'contour-slate', bms: 'ice-grey', esg: 'olive-moon', workforce: 'sand-bands', genai: 'zebra', cleaning: 'charcoal',
+    drones: 'contour-white', frontline: 'rust-bands', wearables: 'ember', vision: 'ash', arvr: 'contour-sand', printing: 'sand-bands', twins: 'olive-moon' };
+  const look = domain => { const [slug, colour] = looks[domain] || ['ai-ml', '#8b5cf6']; return { texture: `assets/planets/families/${slug}.png?v=2`, strip: `assets/planets/natural/${natural[slug] || 'ash'}.jpg`, day: `assets/planets/natural/${natural[slug] || 'ash'}.jpg`, colour }; };
   const maturityDay = { established: 'golden', scaling: 'rose', emerging: 'ice' };
   // A sphere whose surface slides horizontally behind a circular window, with fixed lighting on top.
   function spinGlobe(strip, seconds, day) {
@@ -76,7 +79,7 @@
     const norm = a => { const l = Math.hypot(...a); return a.map(v => v / l); };
     const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
     const f = norm(sub(look, C)), r = norm(cross(f, [0, 1, 0])), u = cross(r, f);
-    const TZ = -.12, TX = .05; // the whole system leans a little, like a galaxy seen slightly off-axis
+    const TZ = -.14, TX = .05; // the whole system leans a little, like a galaxy seen slightly off-axis
     const lean = ([x, y, z]) => { const x1 = x * Math.cos(TZ) - y * Math.sin(TZ), y1 = x * Math.sin(TZ) + y * Math.cos(TZ);
       return [x1, y1 * Math.cos(TX) - z * Math.sin(TX), y1 * Math.sin(TX) + z * Math.cos(TX)]; };
     const project = P => { const v = sub(P, C), zc = dot(v, f); return { x: W / 2 + dot(v, r) / (zc * tanV * aspect) * W / 2, y: H / 2 - dot(v, u) / (zc * tanV) * H / 2, z: zc }; };
@@ -102,7 +105,7 @@
     const maxHeight = Math.max(...items.map(item => item.height), 90);
     // Orbits scale with how many planets there are: a family of two stays compact; big families use the full width.
     // The Facilities overview (no caseMode, default centre) keeps its families close to the centre, like the home page.
-    const reach = compact || loose ? Infinity : (!caseMode && !centreSize ? 170 + items.length * 34 : 220 + items.length * 52);
+    const reach = compact || loose || (caseMode && !centreSize) ? Infinity : (!caseMode && !centreSize ? 170 + items.length * 34 : 220 + items.length * 52);
     const outerX = Math.max(48, Math.min(width / 2 - maxWidth / 2 - 16, reach));
     // Desktop overview starts at the height left in the first screen; it grows only if labels would collide.
     let height = compact ? Math.max(caseMode ? 1000 : 1260, items.length * 125) : fitHeight ? Math.max(fitHeight, items.length * 40) : Math.max(caseMode ? 720 : 960, items.length * 66);
@@ -111,9 +114,10 @@
       const centre = { x: width / 2, y: height / 2, width: centreSize || (compact ? (caseMode ? 120 : 78) : 160), height: centreSize || (caseMode ? 180 : compact ? 100 : 160) };
       const outerY = loose ? height / 2 - maxHeight / 2 - 44 : Math.min(height / 2 - maxHeight / 2 - 44, Math.max(outerX * .44, 140));
       // Try a few ring spacings at this height before giving up and growing taller.
-      const ringSets = caseMode ? (fitHeight ? [[.56, .78, 1], [.62, .81, 1], [.7, .86, 1], [.48, .74, 1]] : [[.56, .78, 1], [.62, .81, 1]]) : fitHeight ? [[.56, .78, 1], [.46, .74, 1], [.52, .78, 1], [.4, .7, 1]] : [[.56, .78, 1], [.40, .70, 1]];
+      const ringSets = caseMode ? (fitHeight ? [[.42, .71, 1], [.46, .73, 1], [.56, .78, 1], [.62, .81, 1]] : [[.42, .71, 1], [.56, .78, 1]]) : fitHeight ? [[.56, .78, 1], [.46, .74, 1], [.52, .78, 1], [.4, .7, 1]] : [[.56, .78, 1], [.40, .70, 1]];
       for (const set of ringSets) {
-      const rings = set.map(scale => ({ rx: outerX * scale, ry: outerY * scale }));
+      // Family views: the orbits are tilted a little (the reference's 3D look); the layout places planets on the tilted rings.
+      const rings = set.map(scale => ({ rx: outerX * scale, ry: outerY * scale, ...(!compact ? { tilt: 8 * Math.PI / 180 } : {}) }));
       const placed = [];
       let failed = false;
       for (let ring = 0; ring < 3; ring++) {
@@ -235,7 +239,6 @@
     }
     const caption = element('span', 'centre-caption', caseMode || universe ? centreLabel : 'TECHNOLOGY FAMILIES');
     if (centreSubLabel) caption.append(element('small', 'centre-sub', centreSubLabel));
-    if (caseMode) caption.hidden = true;
     centre.append(sun, caption);
     // The AGI globe wears a thin light ring: its back half passes behind the globe, its front half across the middle.
     if (universe) centre.prepend(element('span', 'agi-ring is-back')), centre.append(element('span', 'agi-ring is-front'));
@@ -516,7 +519,9 @@
           // Use-case planets: a fixed dark side painted over the sphere.
           // The surface turns horizontally (right to left); Emerging keeps its ring from the still image.
           const wrap = element('span', `moon-wrap is-${item.maturity.toLowerCase()}`);
-          const spin = spinGlobe(`assets/planets/strip-${item.maturity.toLowerCase()}.png`, 40 + (Number(item.sourceId) * 7) % 30, `assets/planets/surfaces/${maturityDay[item.maturity.toLowerCase()] || 'moon'}.jpg`);
+          const realistic = ['zebra', 'contour-white', 'charcoal', 'ember', 'sand-bands', 'olive-moon', 'slate-bands', 'ash', 'contour-sand', 'rust-bands', 'ice-grey', 'contour-slate'];
+          const surface = `assets/planets/natural/${realistic[Number(item.sourceId || 0) % realistic.length]}.jpg`;
+          const spin = spinGlobe(surface, 40 + (Number(item.sourceId) * 7) % 30, surface);
           // Emerging planets wear a ring: its back half sits behind the turning sphere, its front half over it.
           if (item.maturity === 'Emerging') wrap.append(image, element('span', 'planet-ring is-back'), spin, element('span', 'moon-shade'), element('span', 'planet-ring is-front'));
           else wrap.append(image, spin, element('span', 'moon-shade'));
@@ -526,7 +531,16 @@
           button.append(element('strong', 'family-name', item.name), element('span', 'family-count', item.status === 'live' ? item.meta || 'Explore' : 'Coming soon'));
         } else if (caseMode) {
           const copy = element('span', 'satellite-copy');
-          copy.append(element('strong', 'usecase-title', item.title), element('span', 'case-category', item.rawServiceGroup), element('small', 'usecase-maturity', item.maturity));
+          // Under the planet: the title, "Rank #8 · Long-term invest", then the maturity as three dots and its name.
+          const pr = item.prioritisation || {};
+          const rankLine = element('span', 'case-rank', [pr.rank != null ? `Rank #${pr.rank}` : '', pr.category || ''].filter(Boolean).join(' · '));
+          const filled = { Established: 3, Scaling: 2, Emerging: 1 }[item.maturity] || 0;
+          const maturity = element('small', 'usecase-maturity is-dots');
+          maturity.dataset.stage = item.maturity || '';
+          const dots = element('span', 'case-dots');
+          [0, 1, 2].forEach(i => dots.append(element('i', i < filled ? 'is-on' : '')));
+          maturity.append(dots, element('span', '', item.maturity || ''));
+          copy.append(element('strong', 'usecase-title', item.title), rankLine, maturity);
           button.append(copy);
         } else {
           const split = stages.map(stage => ({ stage, count: item.records.filter(record => record.maturity === stage).length })).filter(entry => entry.count);
@@ -630,7 +644,7 @@
   window.createFamilyMap = (container, onSelect) => createMap(container, onSelect);
   window.createUniverseMap = (container, onSelect, centreLabel, centreSubLabel) => createMap(container, onSelect, { universe: true, centreLabel, centreSubLabel });
   window.createFamilyCaseMap = (container, records, { onCase, centreLabel }) => {
-    const map = createMap(container, (record, button) => onCase(record.id, button), { caseMode: true, centreLabel, domain: records[0]?.domain });
+    const map = createMap(container, (record, button) => onCase(record.id, button), { caseMode: true, centreLabel, centreSubLabel: `${records.length} ${records.length === 1 ? 'use case' : 'use cases'}`, domain: records[0]?.domain });
     map.render(records, records[0]?.collection);
     const references = element('details', 'case-map-references');
     references.append(setIconLabel(element('summary', 'redirect-link'), 'Source links', 'external-link'));

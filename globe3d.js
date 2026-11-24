@@ -1,8 +1,8 @@
 /* Real 3D planets (three.js): one transparent WebGL layer behind the page draws a lit sphere wherever a turning
    planet (.spin-globe) sits. The DOM keeps everything else: labels, clicks, hover, keyboard, orbits and layout.
    Lighting follows the reference: light from the centre of the system (--shade-angle), Lambert falloff in linear
-   light, a faint ambient night side and an atmosphere on the lit limb. Planets in the top layer (the full card,
-   The Edit prototype) keep their CSS look. If WebGL is unavailable, nothing changes. */
+   light, a faint ambient night side and an atmosphere on the lit limb. Planets in the top layer (the full card)
+   keep their CSS look. If WebGL is unavailable, nothing changes. */
 (() => {
   'use strict';
   if (!window.THREE) return;
@@ -37,12 +37,12 @@
       tex = mix(tex, vec3(dot(tex, vec3(.2126, .7152, .0722))) * tint, tintAmt); // the AGI globe's gold, coming-soon grey
       float d = dot(N, normalize(L)), diff = max(d, 0.);
       // As in the reference: a light at the system's centre (point light ~2.4) and a very faint ambient (0.06).
-      vec3 col = tex * (diff * 1.35 + .05) * lit;
+      vec3 col = tex * (smoothstep(-.04, .5, d) * 1.45 + .025) * lit;   // a crisp terminator and a near-black night side
       // The centre globe is the system's own star: lit from the front, evenly.
       col = mix(col, tex * (.82 + .3 * max(dot(N, V), 0.)), star);
       // Atmosphere on the lit limb (the reference's atmMat), drawn on the sphere itself so no ring shows outside it.
       float f = pow(1. - max(dot(N, V), 0.), 3.);
-      col += pow(atm, vec3(2.2)) * f * smoothstep(-.35, .55, d) * .75 * (1. - star);
+      col += pow(atm, vec3(2.2)) * f * smoothstep(-.05, .6, d) * .55 * (1. - star);
       gl_FragColor = vec4(pow(col, vec3(1. / 2.2)), alpha);
     }`;
   const halo = `uniform vec3 L; uniform vec3 atm; uniform float lit; uniform float alpha; varying vec3 vN; varying vec3 vV;
@@ -128,7 +128,7 @@
   }
 
   // Which planets the layer may draw: visible, on the page (not in a dialog, popover or the prototype overlay).
-  const skip = node => node.closest('.card-planet, .lp-edit, dialog, [hidden], .is-list');
+  const skip = node => node.closest('.card-planet, dialog, [hidden], .is-list');
   const still = () => document.body.classList.contains('stars-paused') || matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   // The centre of the system a planet belongs to (the AGI globe or a family's centre planet), once per frame.
@@ -205,13 +205,14 @@
       // upper left, like the reference's large focused planet, so it shows the same curved shadow.
       const isCentre = !!node.closest('.service-sun, .family-centre'), isStar = false; // every centre, the AGI globe included, is lit like a planet
       entry.uniforms.star.value = isStar ? 1 : 0;
-      if (isCentre && !isStar) entry.uniforms.L.value.set(-1, .3, .12); // light from the left side: the right half falls into deep shadow
+      // One sun for every view, off to the right and a little behind: each planet is lit on one side, the other in deep shadow.
+      entry.uniforms.L.value.set(1, .3, -.32); // light from the left side: the right half falls into deep shadow
       if (node.closest('.agi-planet')) { entry.uniforms.tint.value.setRGB(1.75, 1.18, .42); entry.uniforms.tintAmt.value = 1; entry.uniforms.atm.value.set('#ffc25e'); entry.colour = '#ffc25e'; }
       else if (node.closest('.universe-world.is-soon')) { entry.uniforms.tint.value.setRGB(1, 1, 1); entry.uniforms.tintAmt.value = 1; }
       else entry.uniforms.tintAmt.value = 0;
       if (!isCentre) {
         const sun = centreOf(node), dx = box.left + r - sun.x, dy = box.top + r - sun.y;
-        if (Math.hypot(dx, dy) < 1) entry.uniforms.L.value.set(-.5, .5, .7); else entry.uniforms.L.value.set(-dx, dy, -dy * 1.25);
+        void dx; void dy;
       }
       const colour = (cs.getPropertyValue('--family-colour') || cs.getPropertyValue('--planet-tint')).trim();
       if (colour !== entry.colour && !node.closest('.agi-planet')) { entry.colour = colour; try { entry.uniforms.atm.value.set(colour || '#9fd4f0'); } catch { entry.uniforms.atm.value.set('#9fd4f0'); } }

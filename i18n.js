@@ -13,7 +13,7 @@
 
   // ---------- Interface dictionary (exact English → Arabic) ----------
   const D = {
-    'Skip to solar system': 'انتقل إلى المجموعة الشمسية', 'Tech Incubation Hub': 'مركز احتضان التقنيات', 'Technology use cases': 'حالات استخدام التقنية', 'Al Ghurair': 'الغرير', 'Tech Incubation Hub home': 'الصفحة الرئيسية لمركز احتضان التقنيات',
+    'Skip to solar system': 'انتقل إلى المجموعة الشمسية', 'Tech Incubation Hub': 'مركز احتضان التقنيات', 'Emerging Tech Radar': 'رادار التقنيات الناشئة', 'Emerging Tech Radar home': 'الصفحة الرئيسية لرادار التقنيات الناشئة', 'Al Ghurair — Emerging Tech Radar': 'الغرير — رادار التقنيات الناشئة', 'Technology use cases': 'حالات استخدام التقنية', 'Al Ghurair': 'الغرير', 'Tech Incubation Hub home': 'الصفحة الرئيسية لمركز احتضان التقنيات',
     'Service': 'الخدمات', 'Internal': 'الداخلية', 'Search use cases': 'ابحث في حالات الاستخدام', 'AGI': 'AGI', 'Al Ghurair Investment': 'الغرير للاستثمار',
     'Facilities': 'المرافق', 'Healthcare': 'الرعاية الصحية', 'Foods & Agriculture': 'الأغذية والزراعة', 'Mobility & Automotive': 'التنقل والسيارات', 'Property & Hospitality': 'العقارات والضيافة', 'Coming soon': 'قريبًا', 'Live': 'متاح', 'Explore': 'استكشف',
     'Technology use cases for facilities management services and operations.': 'حالات استخدام التقنية لخدمات وعمليات إدارة المرافق.',
@@ -127,7 +127,11 @@
     }
     return text;
   }
+  D['Click to open'] = 'انقر للفتح'; D['Search  ⌘K'] = 'بحث  ⌘K'; D['Search  Ctrl K'] = 'بحث  Ctrl K';
   window.atlasT = t;
+  // Other pages (the launch page) add their own words and patterns.
+  window.atlasAddDictionary = words => Object.assign(D, words);
+  window.atlasAddPattern = (pattern, fn) => R.unshift([pattern, fn]);
 
   // ---------- Use-case content (from data-ar.js) ----------
   if (lang === 'ar') {
@@ -168,7 +172,7 @@
     [['en', 'EN', 'English'], ['ar', 'ع', 'العربية']].forEach(([code, text, name]) => {
       const button = document.createElement('button');
       button.type = 'button'; button.lang = code; button.textContent = text; button.className = `lang-option is-${code}`;
-      button.setAttribute('aria-label', name); button.setAttribute('aria-pressed', String(code === lang));
+      button.setAttribute('aria-label', name); button.dataset.tooltip = name; button.setAttribute('aria-pressed', String(code === lang));
       button.addEventListener('click', () => {
         if (code === lang) return;
         try { localStorage.setItem(KEY, code); } catch { /* storage unavailable */ }
@@ -185,7 +189,7 @@
     addToggle();
     if (lang !== 'ar') return;
     translateNode(document.body);
-    document.title = 'الغرير — مركز احتضان التقنيات';
+    document.title = new URLSearchParams(location.search).has('launch') ? 'الغرير | مركز احتضان التقنيات' : 'الغرير — مركز الابتكار';
     new MutationObserver(records => records.forEach(record => {
       if (record.type === 'characterData') translateNode(record.target);
       else if (record.type === 'attributes') translateNode(record.target);

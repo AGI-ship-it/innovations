@@ -28,7 +28,7 @@
     control.setAttribute('aria-pressed', String(starsPaused || reducedMotion.matches));
   }
   // ⌘K / Ctrl+K opens search from anywhere.
-  if (!/Mac|iPhone|iPad/.test(navigator.platform)) document.querySelector('#overview-all kbd').textContent = 'Ctrl K';
+  if (!/Mac|iPhone|iPad/.test(navigator.platform)) { document.querySelector('#overview-all kbd').textContent = 'Ctrl K'; byId('overview-all').dataset.tooltip = 'Search  Ctrl K'; }
   document.addEventListener('keydown', event => {
     if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k' && !document.querySelector('dialog[open]')) { event.preventDefault(); byId('overview-all').click(); }
   });
@@ -272,47 +272,57 @@
       if (live) {
         const action = previewAction(`Open ${area.name}`);
         action.addEventListener('click', () => { const origin = previewTarget; hidePreview(); openArea(area, origin); });
-        preview.append(action);
+        preview.append(el('p', 'pc-hint', 'Click to open'), action);
       }
     } else {
-    const meta = el('div', 'preview-meta', family ? `${family.records.length} ${family.records.length === 1 ? 'use case' : 'use cases'} · ${['Established', 'Scaling', 'Emerging'].map(stage => [stage, family.records.filter(item => item.maturity === stage).length]).filter(([, count]) => count).map(([stage, count]) => `${count} ${stage}`).join(' · ')}` : '');
-    // Use cases: an eyebrow in the maturity's colour — "SCALING · CASE 08".
-    if (record && !family) {
-      meta.classList.add('preview-eyebrow');
-      meta.style.setProperty('--eyebrow-tone', { Established: '#f2b84b', Scaling: '#e24bc0', Emerging: '#3fd6c4' }[record.maturity] || '#e24bc0');
-      meta.append(el('span', '', record.maturity), el('span', 'preview-dot', '·'), el('span', '', 'Case'), el('span', 'preview-case-no', String(record.sourceId).padStart(2, '0')));
-    }
-    const heading = el('h3', '', family ? family.label : record.title); heading.id = 'preview-title';
-    preview.replaceChildren(meta, heading);
+    preview.classList.toggle('is-case', !family);
     if (family) {
+      const meta = el('div', 'preview-meta', `${family.records.length} ${family.records.length === 1 ? 'use case' : 'use cases'} · ${['Established', 'Scaling', 'Emerging'].map(stage => [stage, family.records.filter(item => item.maturity === stage).length]).filter(([, count]) => count).map(([stage, count]) => `${count} ${stage}`).join(' · ')}`);
+      const heading = el('h3', '', family.label); heading.id = 'preview-title';
+      preview.replaceChildren(meta, heading);
       const list = el('ul', 'preview-cases');
       family.records.slice(0, 3).forEach(item => list.append(el('li', '', item.title)));
       preview.append(list);
       if (family.records.length > 3) preview.append(el('p', 'preview-more', `+ ${family.records.length - 3} more use cases`));
+      preview.append(el('p', 'pc-hint', 'Click to open'));
     } else {
-      // Summary only: one line of description, two key scores and a short value. The full card has the detail.
+      // Use cases: an icon for the technology, the title and domain, one line of description, then three facts —
+      // maturity (dots), priority (a ring filled to the score, with the category) and rank — and a "Click to open" hint.
+      const domainIcon = [[/workforce/i, 'users'], [/bms|hvac/i, 'thermometer'], [/iot|sensor/i, 'radio'], [/predictive/i, 'activity'],
+        [/frontline|mobile/i, 'smartphone'], [/esg|carbon/i, 'leaf'], [/drone/i, 'plane'], [/robot|clean/i, 'bot'], [/generative|copilot/i, 'sparkles'],
+        [/wearable/i, 'watch'], [/vision/i, 'scan-eye'], [/twin/i, 'boxes'], [/ar\/vr|augmented|virtual/i, 'glasses'], [/print/i, 'printer']]
+        .find(([pattern]) => pattern.test(record.domain || ''))?.[1] || 'cpu';
+      const head = el('div', 'pc-head');
+      const tile = el('span', 'pc-icon'); tile.append(icon(domainIcon));
+      const words = el('div', 'pc-words');
+      const heading = el('h3', '', record.title); heading.id = 'preview-title';
+      words.append(heading, el('p', 'pc-domain', record.domain || ''));
+      head.append(tile, words);
       const lead = (record.description.split(/(?<=[.!?؟])\s|Step 1:|The outputs? (?:is|are) |It is needed because /)[0] || record.description).trim();
-      preview.append(el('p', 'preview-description', lead));
+      preview.replaceChildren(head, el('p', 'preview-description', lead));
       const p = record.prioritisation || {};
-      const number = value => new Intl.NumberFormat('en-GB', { maximumFractionDigits: 2 }).format(value);
-      const { rubricBand, categoryBand } = window.AtlasScoring;
-      const rows = el('dl', 'preview-scores');
-      [['Priority', p.priorityScore, 16, () => categoryBand(p.category)], ['Viability', p.viability, 4, value => rubricBand(value, 2.5)]].forEach(([label, raw, maximum, rate]) => {
-        const scored = typeof raw === 'number';
-        const row = el('div', 'preview-score'); if (scored) row.dataset.band = rate(raw).band;
-        const figure = el('dd', ''); figure.append(el('span', '', scored ? number(raw) : '–'), el('span', 'preview-max', scored ? ` / ${maximum}` : ''));
-        row.append(el('dt', '', label), figure); rows.append(row);
-      });
-      preview.append(rows);
-      // The first clause of the value statement, when it is short enough to read at a glance.
-      // Up to about two lines; a long "Source: result" statement keeps just the result. Never cut mid-sentence.
-      let short = String(record.value || '').split(/;\s*|؛\s*/)[0].trim();
-      if (short.length > 100) { const after = short.split(/:\s+/).slice(1).join(': '); if (after && after.length <= 100) short = after; }
-      if (short && short.length <= 100) {
-        const value = el('div', 'preview-value');
-        value.append(el('strong', '', 'Value realised'), el('p', '', short));
-        preview.append(value);
+      const facts = el('dl', 'pc-facts');
+      const fact = (label, value, tone) => { const box = el('div', 'pc-fact'); if (tone) box.style.setProperty('--tone', tone); box.append(el('dt', '', label), value); facts.append(box); };
+      // maturity: three dots, filled by stage
+      const stageTone = { Established: '#6ee7a8', Scaling: '#f2b84b', Emerging: '#3fd6c4' }[record.maturity] || '#bdb4c7';
+      const filled = { Established: 3, Scaling: 2, Emerging: 1 }[record.maturity] || 0;
+      const maturity = el('dd', 'pc-maturity'); const dots = el('span', 'pc-dots');
+      [0, 1, 2].forEach(i => dots.append(el('i', i < filled ? 'is-on' : '')));
+      maturity.append(dots, el('span', '', record.maturity || '–')); fact('Maturity', maturity, stageTone);
+      // priority: a ring filled to the score (out of 16) around the category's icon
+      if (p.category) {
+        const tone = { 'Quick win': '#6ee7a8', 'Long-term invest': '#f2b84b', 'Consider for pilot': '#ff7ccf', 'Deprioritise': '#a99fb3' }[p.category] || '#bdb4c7';
+        const glyph = { 'Quick win': 'zap', 'Long-term invest': 'hourglass', 'Consider for pilot': 'flask-conical', 'Deprioritise': 'arrow-down' }[p.category] || 'zap';
+        const share = Math.max(.08, Math.min(1, (p.priorityScore || 0) / 16));
+        const ring = el('span', 'pc-ring'); ring.style.setProperty('--share', share.toFixed(3)); ring.append(icon(glyph));
+        const priority = el('dd', 'pc-priority'); priority.append(ring, el('span', '', p.category)); fact('Priority', priority, tone);
       }
+      // rank among the use cases of the same collection
+      if (p.rank != null) {
+        const total = records.filter(item => item.collection === record.collection && item.prioritisation?.rank != null).length;
+        const rank = el('dd', 'pc-rank'); rank.append(el('span', 'pc-rank-no', String(p.rank)), el('span', 'pc-rank-of', `of ${total}`)); fact('Rank', rank);
+      }
+      preview.append(facts, el('p', 'pc-hint', 'Click to open'));
     }
     const action = previewAction(family ? `Explore ${family.label} use cases` : `Open the full card: ${record.title}`);
     action.addEventListener('click', () => {
@@ -583,7 +593,7 @@
     const family = state.family;
     const collectionName = state.collection === 'internal' ? 'Internal' : 'Service';
     const inUniverse = state.view === 'universe';
-    document.title = inUniverse ? 'Al Ghurair — Tech Incubation Hub' : `Al Ghurair — Facilities / ${collectionName} / ${family ? family.label : 'Technology families'}`;
+    document.title = inUniverse ? 'Al Ghurair — Emerging Tech Radar' : `Al Ghurair — Facilities / ${collectionName} / ${family ? family.label : 'Technology families'}`;
     document.body.classList.toggle('is-universe', inUniverse);
     byId('universe-view').hidden = !inUniverse;
     if (inUniverse && !universeRendered) { universeMap.render(universeItems); universeRendered = true; }
@@ -1074,7 +1084,7 @@
     const image = source.cloneNode(); image.className = 'card-planet-image'; image.removeAttribute('style');
     const stage = (button?.dataset.maturity || '').toLowerCase();
     // The planet turns horizontally (right to left); Emerging keeps its ring from the still image.
-    const turning = stage ? [window.FamilyAtlas.spinGlobe(`assets/planets/strip-${stage}.png`, 60, `assets/planets/surfaces/${window.FamilyAtlas.maturityDay[stage] || 'moon'}.jpg`)] : [];
+    const turning = stage ? [window.FamilyAtlas.spinGlobe(`assets/planets/natural/${({ established: 'contour-white', scaling: 'zebra', emerging: 'charcoal' })[stage] || 'ash'}.jpg`, 60)] : [];
     if (stage === 'emerging') orb.append(image, el('span', 'planet-ring is-back'), ...turning, el('span', 'orb-shade'), el('span', 'planet-ring is-front'));
     else orb.append(image, ...turning, el('span', 'orb-shade'));
     orb.classList.toggle('is-emerging', stage === 'emerging');
@@ -1259,7 +1269,7 @@
     byId('search').focus();
   });
   // Panels open in place: the search index and About the research are anchored at their header buttons (top right)
-  // and grow out of them, folding back into the button on close (like The Edit's chapters list).
+  // and grow out of them, folding back into the button on close.
   const wideScreen = () => window.innerWidth > 760;
   const motionOn = () => wideScreen() && !reducedMotion.matches && !starsPaused;
   function inPlace(dialog, anchorId) {

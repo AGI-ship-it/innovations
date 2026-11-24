@@ -3461,7 +3461,7 @@ html.has-3d-globes .spin-globe.is-3d ~ :is(.globe-shade, .moon-shade, .orb-shade
 html.has-3d-globes .family-world:is(:hover, :focus-visible, .is-linked) .spin-globe.is-3d { box-shadow: 0 0 22px color-mix(in srgb, var(--family-colour, #b48cff) 55%, transparent); }
 /* rings: the back half passes behind the sphere, so it is cut away where the sphere is */
 html.has-3d-globes .moon-wrap .planet-ring.is-back { -webkit-mask-image: radial-gradient(33.3% 143% at 50% 50%, transparent 98%, #000 100%); mask-image: radial-gradient(33.3% 143% at 50% 50%, transparent 98%, #000 100%); }
-/* No night side on any planet: the remaining CSS globes (full card, The Edit) are fully lit too */
+/* No night side on any planet: the remaining CSS globes (full card) are fully lit too */
 .spin-globe::before { display: none !important; }
 .spin-globe ~ :is(.moon-shade, .orb-shade, .globe-shade), .card-planet-orb .orb-shade { background: none !important; }
 /* No ring around 3D planets: the AGI's edge overlay and any inset rims step aside too */
@@ -3603,7 +3603,7 @@ html.sky-ready .cosmic-sky .nebula-sky { transition: opacity .9s ease; }
 /* Performance: CSS globes replaced by the 3D layer stop their background animation (it repainted every frame for nothing) */
 .spin-globe.is-3d { animation: none !important; }
 
-/* Search index opens in place at the search button (top right), like The Edit's chapters list */
+/* Search index opens in place at the search button (top right), growing out of its button */
 @media (min-width: 761px) {
   #browse-dialog.is-anchored { position: fixed; margin: 0; inset: var(--b-top, 16px) var(--b-right, 16px) auto auto; max-height: calc(100vh - var(--b-top, 16px) - 16px); }
   #browse-dialog.is-anchored::backdrop { background: #08070e80; backdrop-filter: blur(4px); }
@@ -3615,3 +3615,95 @@ html.sky-ready .cosmic-sky .nebula-sky { transition: opacity .9s ease; }
 
 /* Performance: orbit paths are drawn by the 3D layer, so their SVG blur filter is not needed */
 html.has-3d-globes .universe-map .family-track, html.has-3d-globes .family-track { filter: none !important; }
+
+/* ===== Deep space (as in the Tech Incubation Hub launch hero): a deep navy-black wash over the painted haze, so the
+   purple reads as a faint, distant nebula. The starfield is its own layer above, so the stars stay bright. ===== */
+:root:not([data-theme="light"]) .cosmic-sky::after { z-index: 2;
+  background: radial-gradient(ellipse 70% 60% at 50% 40%, #0c1220 0%, transparent 70%), linear-gradient(180deg, #05070b 0%, #060912 55%, #04060a 100%);
+  opacity: .62; }
+
+/* ===== Titles in Outfit (as on the Tech Incubation Hub launch page; @font-face in hub-landing.css). Small uppercase
+   section labels stay in Inter, and Arabic keeps Almarai. ===== */
+html:not([lang="ar"]) :is(h1, h2, h3:not(.cx-h):not(#value-heading), .family-name, .usecase-title, .family-sun-name, .planet-name, .case-row-title,
+  .core-title, .area-sun-name, .preview-title) { font-family: 'Outfit', 'Inter', system-ui, sans-serif !important; letter-spacing: -.01em; }
+
+/* ===== Use-case hover card: icon + title + domain, one line of description, then Maturity · Priority · Rank and "Click to open" ===== */
+aside.planet-preview.is-case { width: min(400px, calc(100vw - 32px)); padding: 22px 24px 18px; border-radius: 22px;
+  background: linear-gradient(180deg, #ffffff12, #ffffff06 60%), #0e1312e0; box-shadow: inset 0 0 0 1px #ffffff26, inset 0 1px 0 #ffffff1f, 0 18px 44px #0009; }
+aside.planet-preview.is-case::before, aside.planet-preview.is-case::after { display: none; }
+aside.planet-preview.is-case .pc-head { display: flex; align-items: center; gap: 14px; }
+aside.planet-preview.is-case .pc-icon { display: grid; place-items: center; flex: none; width: 46px; height: 46px; border-radius: 13px; background: #ffffff0f; border: 1px solid #ffffff2b; color: #e6e1ea; }
+aside.planet-preview.is-case .pc-icon svg { width: 20px; height: 20px; margin: 0; }
+aside.planet-preview.is-case .pc-words { min-width: 0; }
+aside.planet-preview.is-case h3 { margin: 0; padding: 0 !important; font-size: 18px; line-height: 1.25; text-wrap: pretty; text-shadow: none; }
+aside.planet-preview.is-case .pc-domain { margin: 3px 0 0; font-size: 13.5px; color: #ffffff99; }
+aside.planet-preview.is-case .preview-description { margin: 14px 0 0 !important; font-size: 14.5px; line-height: 1.55; color: #ffffffd9; -webkit-line-clamp: 2 !important; line-clamp: 2 !important; text-shadow: none; }
+aside.planet-preview.is-case .pc-facts { display: grid; grid-template-columns: auto auto auto; justify-content: space-between; gap: 14px; margin: 14px 0 0; padding-top: 14px; border-top: 1px solid #ffffff1a; }
+aside.planet-preview.is-case .pc-fact dt { margin-bottom: 8px; font-size: 10.5px; font-weight: 600; letter-spacing: 1.6px; text-transform: uppercase; color: #ffffff8c; }
+aside.planet-preview.is-case .pc-fact dd { display: flex; align-items: center; gap: 8px; margin: 0; min-height: 34px; font-size: 14.5px; font-weight: 600; color: var(--tone, #fff); white-space: nowrap; }
+aside.planet-preview.is-case .pc-dots { display: inline-flex; align-items: center; }
+aside.planet-preview.is-case .pc-dots i { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--tone); box-sizing: border-box; }
+aside.planet-preview.is-case .pc-dots i.is-on { background: var(--tone); }
+aside.planet-preview.is-case .pc-dots i + i { margin-inline-start: 9px; position: relative; }
+aside.planet-preview.is-case .pc-dots i + i::before { content: ''; position: absolute; right: 100%; top: 50%; width: 9px; height: 1.5px; translate: 0 -50%; background: var(--tone); opacity: .7; }
+aside.planet-preview.is-case .pc-ring { --share: .5; position: relative; display: grid; place-items: center; width: 32px; height: 32px; }
+aside.planet-preview.is-case .pc-ring::before { content: ''; position: absolute; inset: 0; border-radius: 50%;
+  background: conic-gradient(var(--tone) calc(var(--share) * 360deg), #ffffff1f 0); -webkit-mask: radial-gradient(circle, transparent 12.5px, #000 13px); mask: radial-gradient(circle, transparent 12.5px, #000 13px); }
+aside.planet-preview.is-case .pc-priority { position: relative; }
+aside.planet-preview.is-case .pc-priority > svg, aside.planet-preview.is-case .pc-ring svg { width: 14px; height: 14px; margin: 0; }
+aside.planet-preview.is-case .pc-rank-no { display: grid; place-items: center; min-width: 34px; height: 30px; padding: 0 8px; border-radius: 9px; background: #ffffff12; border: 1px solid #ffffff26; color: #fff; font-variant-numeric: tabular-nums; }
+aside.planet-preview.is-case .pc-rank-of { font-weight: 400; color: #ffffffa6; }
+aside.planet-preview.is-case .pc-hint { margin: 14px 0 0; font-size: 12.5px; color: #ffffff80; }
+aside.planet-preview.is-case .preview-open { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; overflow: hidden; clip: rect(0 0 0 0); border: 0 !important; }
+
+/* ===== Use-case planet labels: title, "Rank #N · Category", then maturity as three dots + name in the stage colour ===== */
+.case-orbit-map .case-rank { display: block; margin-top: 5px; font-size: 12.5px; line-height: 1.35; color: #ffffffa6; text-shadow: 0 1px 6px #000c; }
+.case-orbit-map .usecase-maturity.is-dots { --stage: #f2b84b; display: inline-flex !important; align-items: center; gap: 8px; margin-top: 6px !important; padding: 0 !important;
+  border: 0 !important; background: none !important; box-shadow: none !important; font-size: 13px !important; letter-spacing: 0 !important; text-transform: none !important;
+  color: var(--stage) !important; text-shadow: 0 1px 6px #000c; }
+.case-orbit-map .usecase-maturity.is-dots[data-stage="Established"] { --stage: #6ee7a8; }
+.case-orbit-map .usecase-maturity.is-dots[data-stage="Emerging"] { --stage: #3fd6c4; }
+.case-orbit-map .case-dots { display: inline-flex; gap: 4px; }
+.case-orbit-map .case-dots i { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--stage); box-sizing: border-box; }
+.case-orbit-map .case-dots i.is-on { background: var(--stage); }
+.case-orbit-map.is-dense .case-rank { font-size: 11px; margin-top: 3px; }
+.case-orbit-map.is-dense .usecase-maturity.is-dots { font-size: 11.5px !important; margin-top: 4px !important; }
+[data-theme="light"] .case-orbit-map .case-rank { color: #2a4677; text-shadow: none; }
+
+/* ===== Family view look (reference): realistic planets lit from the centre, the family's name under its planet ===== */
+.case-orbit-map .family-sun .family-sun-name { display: none; }
+.case-orbit-map .case-centre > .centre-caption { display: flex !important; flex-direction: column; align-items: center; gap: 4px; margin-top: 4px; white-space: normal; text-align: center;
+  font-family: 'Outfit', 'Inter', system-ui, sans-serif; font-size: 22px; font-weight: 600; line-height: 1.2; letter-spacing: -.01em; text-transform: none; color: #fff; text-shadow: 0 1px 8px #000c; }
+.case-orbit-map .case-centre .centre-sub { font-family: 'Inter', system-ui, sans-serif; font-size: 14px; font-weight: 400; letter-spacing: 0; color: #ffffffa6; }
+.case-orbit-map .case-centre { width: 220px; gap: 14px; }
+.case-orbit-map .usecase-title { font-size: 15px !important; font-weight: 600 !important; color: #fff !important; text-shadow: 0 1px 8px #000d; }
+
+/* ===== Hover cards: solid dark (no see-through glass), one style for families, use cases and business areas ===== */
+:root:not([data-theme="light"]) aside.planet-preview, :root:not([data-theme="light"]) aside.planet-preview.is-case {
+  background: linear-gradient(180deg, #1c1922, #141218) !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+  box-shadow: inset 0 0 0 1px #ffffff1f, inset 0 1px 0 #ffffff14, 0 18px 44px #000a !important; }
+:root:not([data-theme="light"]) aside.planet-preview::before, :root:not([data-theme="light"]) aside.planet-preview::after { display: none !important; }
+:root:not([data-theme="light"]) aside.planet-preview :is(h3, .preview-description, .preview-cases, .preview-value p) { text-shadow: none !important; }
+
+/* Family view orbits: thin, faint lines (as in the reference) */
+:root body .case-orbit-map .family-orbit-lines .family-track { stroke: #ffffff !important; stroke-opacity: .12 !important; stroke-width: .8 !important; filter: none !important; }
+/* even thinner family orbits */
+:root body .case-orbit-map .family-orbit-lines .family-track { stroke-width: .6 !important; stroke-opacity: .1 !important; vector-effect: non-scaling-stroke; }
+
+/* "Click to open" on every card that opens something (families, business areas, use cases); the whole card is the
+   target, so the small corner icon is kept only for keyboard and screen-reader users */
+aside.planet-preview .pc-hint { margin: 14px 0 0; padding-top: 12px; border-top: 1px solid #ffffff14; font-size: 12.5px; color: #ffffff80; }
+aside.planet-preview.is-case .pc-hint { padding-top: 0; border-top: 0; }
+aside.planet-preview:has(.pc-hint) .preview-open { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; overflow: hidden; clip: rect(0 0 0 0); border: 0 !important; }
+aside.planet-preview:has(.pc-hint) :is(.preview-meta, h3) { padding-right: 0 !important; }
+aside.planet-preview:has(.pc-hint) { cursor: pointer; }
+[data-theme="light"] aside.planet-preview .pc-hint { color: #3b1d4a99; border-color: #3b1d4a1a; }
+
+/* Thin orbit lines on every view (home, Facilities and family views), like the family view */
+:root body .family-map .family-orbit-lines .family-track { stroke-width: .6 !important; stroke-opacity: .14 !important; filter: none !important; vector-effect: non-scaling-stroke; }
+:root body .family-map:not(.universe-map) .family-orbit-lines .family-track { stroke: #ffffff !important; stroke-opacity: .1 !important; }
+
+/* Language switch hover (Hub and launch page): the other language lights up softly, with its name in a tooltip */
+.lang-switch .lang-option { position: relative; transition: color .2s, background-color .2s; }
+.lang-switch .lang-option[aria-pressed="false"]:hover { color: #fff; background: #ffffff12; }
+.lang-switch .lang-option[data-tooltip]::after { font-family: 'Inter', 'Almarai', system-ui, sans-serif; font-size: 12px; font-weight: 500; letter-spacing: 0; }

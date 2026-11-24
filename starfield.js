@@ -188,16 +188,16 @@
       if (now - last < 31 || document.hidden) { requestAnimationFrame(frame); return; } // ~30 fps
       const dt = Math.min(.05, (now - last) / 1000), t = now / 1000, calm = still(); last = now;
       g.clearRect(0, 0, W, H);
-      if (!calm) { px += (aimX - px) * (1 - Math.exp(-dt * 1.6)); py += (aimY - py) * (1 - Math.exp(-dt * 1.6)); }
+      if (!calm) { px += (aimX - px) * (1 - Math.exp(-dt * 3)); py += (aimY - py) * (1 - Math.exp(-dt * 3)); }
       // parallax: the far painted sky slides a little against the pointer, near layers more
-      if (painted) painted.style.transform = `translate(${(-px * 7).toFixed(2)}px, ${(-py * 4.5).toFixed(2)}px) scale(1.02)`;
+      if (painted) painted.style.transform = `translate(${(-px * 20).toFixed(2)}px, ${(-py * 13).toFixed(2)}px) scale(1.05)`;
       g.globalCompositeOperation = 'lighter';
-      twinkle.forEach(s => { const o = calm ? .7 : .45 + .55 * Math.sin(t * s.f + s.p) ** 2, x = s.x - px * 12 * s.depth, y = s.y - py * 8 * s.depth, R = s.r * 3.4;
+      twinkle.forEach(s => { const o = calm ? .7 : .45 + .55 * Math.sin(t * s.f + s.p) ** 2, x = s.x - px * 36 * s.depth, y = s.y - py * 24 * s.depth, R = s.r * 3.4;
         g.globalAlpha = o; g.drawImage(sprite(s.c), x - R, y - R, R * 2, R * 2); });
       g.globalAlpha = 1;
       const R = Math.hypot(W, H) / 2;
       near.forEach((s, i) => { if (!calm) { s.d += s.v * dt * (.3 + s.d * 1.6); if (s.d > 1.05) { near[i] = s = spawnNear(false); } }
-        const x = W / 2 + Math.cos(s.a) * s.d * R - px * 22 * s.d, y = H * .5 + Math.sin(s.a) * s.d * R - py * 14 * s.d, r = .35 + s.d * 1.5, o = s.b * Math.min(1, s.d * 6) * .8;
+        const x = W / 2 + Math.cos(s.a) * s.d * R - px * 64 * s.d, y = H * .5 + Math.sin(s.a) * s.d * R - py * 42 * s.d, r = .35 + s.d * 1.5, o = s.b * Math.min(1, s.d * 6) * .8;
         g.fillStyle = `rgba(${s.c.map(v => Math.round(v * 255)).join(',')},${o.toFixed(3)})`; g.beginPath(); g.arc(x, y, r, 0, 6.283); g.fill(); });
       // shooting stars
       if (!calm && now > next) { rand() < .07 ? shower() : meteor(); next = now + 4000 + rand() * 5000; }
