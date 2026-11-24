@@ -84,6 +84,9 @@
 
   let view = 'public', intent = 'question', capIndex = 0;
   try { const v = localStorage.getItem(VIEW_KEY); if (v === 'public' || v === 'teams') view = v; } catch {}
+  // Teams start on Share an idea; Public visitors start on a question.
+  const defaultIntent = () => view === 'teams' ? 'idea' : 'question';
+  intent = defaultIntent();
 
   /* ---------- Markup ---------- */
   const segmented = (label, value, options, name) => `
@@ -421,7 +424,7 @@
     const idea = intent === 'idea';
     return `
       <p class="hl-sawa">${ic('shield-check')} Your SAWA profile fills in your name, business and team once you are signed in.</p>
-      ${segmented('What would you like to do?', intent, [['question', 'Ask a question'], ['idea', 'Share an idea']], 'intent')}
+      ${segmented('What would you like to do?', intent, [['idea', 'Share an idea'], ['question', 'Ask a question']], 'intent')}
       ${!idea ? `
         ${field('Topic', 'topic', select('topic', opts([['process', 'How the Hub process works', true], 'A technology domain', 'An existing use case', 'Something else'])))}
         ${field('Your question', 'question', textarea('question', 'rows="4" data-required aria-required="true"'), { error: 'Write your question.' })}`
@@ -643,7 +646,7 @@
     /* Re-render the parts that depend on the audience view. */
     function setView(v, focusSeg) {
       if (v === view) return;
-      view = v; intent = 'question';
+      view = v; intent = defaultIntent();
       try { localStorage.setItem(VIEW_KEY, v); } catch {}
       slots('view').forEach(s => { s.innerHTML = viewSwitch(); });
       slots('kpis').forEach(s => { s.innerHTML = kpis(); });
