@@ -176,3 +176,51 @@ window.atlasAddDictionary?.({ 'Sample': 'نموذج' });
 window.atlasAddDictionary?.({ 'Sample photo': 'صورة نموذجية', 'Previous note': 'الكلمة السابقة', 'Next note': 'الكلمة التالية' });
 window.atlasAddDictionary?.({ 'Story highlights': 'أبرز القصص' });
 window.atlasAddDictionary?.({ 'Latest from the Hub': 'آخر أخبار المركز', '3 updates': '3 تحديثات' });
+
+// Share an idea: the four questions and how ideas are evaluated
+window.atlasAddDictionary?.({
+  'Four questions. Answer them the way you’d explain it to a colleague.': 'أربعة أسئلة. أجب عنها كما تشرح الفكرة لزميل.',
+  '1 · Problem': '١ · المشكلة', '2 · Customer': '٢ · المستفيد', '3 · Proposed solution': '٣ · الحل المقترح', '4 · Expected value': '٤ · القيمة المتوقعة',
+  'Desirability': 'الرغبة', 'Feasibility': 'قابلية التنفيذ', 'Financial value': 'القيمة المالية', 'Strategic fit': 'التوافق الاستراتيجي', 'Speed to value': 'سرعة تحقيق القيمة',
+  'Say who has this problem.': 'اذكر من يواجه هذه المشكلة.', 'Say what would change if it works.': 'اذكر ما الذي سيتغير إذا نجحت الفكرة.',
+  'What goes wrong today, and how often?': 'ما الذي لا يسير كما يجب اليوم، وكم مرة يحدث؟',
+  'Who feels it, and roughly how many people?': 'من يتأثر به، وكم عددهم تقريبًا؟',
+  'What would you do about it?': 'ماذا ستفعل لحلّه؟',
+  'What changes if it works? e.g. approvals in 4 hours, not 2 days': 'ما الذي يتغير إذا نجحت؟ مثلًا: الموافقة خلال 4 ساعات بدل يومين',
+  'Type of value': 'نوع القيمة',
+  'How we evaluate ideas': 'كيف نقيّم الأفكار',
+  'Seven perspectives. Five factors. One decision.': 'سبع وجهات نظر. خمسة عوامل. قرار واحد.',
+  'Every idea is reviewed from seven points of view, each reacting independently in its own voice.': 'تُراجَع كل فكرة من سبع وجهات نظر، تتفاعل كل منها باستقلال وبصوتها الخاص.',
+  'CEO': 'الرئيس التنفيذي', 'Would I sponsor this?': 'هل سأتبنّى هذه الفكرة؟',
+  'IT Business Partner': 'شريك أعمال تقنية المعلومات', 'Economics, return and hidden costs': 'الجدوى والعائد والتكاليف الخفية',
+  'Customer': 'المستفيد', 'Would people really use it?': 'هل سيستخدمها الناس فعلًا؟',
+  'Technology': 'التقنية', 'Can we build it on what we have?': 'هل يمكننا بناؤها على ما لدينا؟',
+  'Risk': 'المخاطر', 'Compliance and operational risk': 'الامتثال والمخاطر التشغيلية',
+  'Challenger': 'المُشكِّك', 'Tries to kill the idea': 'يحاول إسقاط الفكرة',
+  'Venture': 'التوسّع', 'Finds ways to scale it': 'يبحث عن طرق لتوسيعها',
+  'Innovation score': 'مؤشر الابتكار',
+  'Desirability × Feasibility × Financial value × Strategic fit × Speed to value': 'الرغبة × قابلية التنفيذ × القيمة المالية × التوافق الاستراتيجي × سرعة تحقيق القيمة',
+  'The five factors multiply, so one weak factor pulls the whole score down.': 'تُضرب العوامل الخمسة معًا، لذا يكفي عامل ضعيف واحد لخفض النتيجة كلها.',
+  'CEO and Venture': 'الرئيس التنفيذي والتوسّع', 'Risk and Challenger': 'المخاطر والمُشكِّك',
+  'Build': 'بناء', 'Pilot': 'تجربة', 'Stop': 'إيقاف',
+  'Score 42 or more': 'النتيجة 42 فأكثر', 'Score 20 to 41': 'النتيجة من 20 إلى 41', 'Score under 20': 'النتيجة أقل من 20',
+  'Moves to a Circle Session with a sponsor.': 'تنتقل إلى جلسة Circle مع راعٍ.',
+  'A time-boxed test to gather evidence before we commit capacity.': 'اختبار محدد المدة لجمع الأدلة قبل تخصيص الموارد.',
+  'Closed, and what we learned is published so no one repeats it.': 'تُغلق، ويُنشر ما تعلّمناه حتى لا يتكرر.',
+  'To confirm': 'قيد التأكيد',
+  'The score suggests an outcome; the Hub team makes the decision after triage and tells you in Teams.': 'تقترح النتيجة مسارًا، ويتخذ فريق المركز القرار بعد الفرز ويبلغك عبر Teams.',
+  'The Hub team triages new ideas every week from seven perspectives. You’ll hear the outcome, Build, Pilot or Stop, in Teams.': 'يفرز فريق المركز الأفكار الجديدة كل أسبوع من سبع وجهات نظر، وستعرف النتيجة (بناء أو تجربة أو إيقاف) عبر Teams.',
+});
+window.atlasAddDictionary?.({ 'Four questions': 'أربعة أسئلة', 'Answer them the way you’d explain it to a colleague.': 'أجب عنها كما تشرح الفكرة لزميل.', 'Problem': 'المشكلة', 'Customer': 'المستفيد', 'Proposed solution': 'الحل المقترح', 'Expected value': 'القيمة المتوقعة', 'What changes if it works? For example, approvals in 4 hours, not 2 days.': 'ما الذي يتغير إذا نجحت؟ مثلًا: الموافقة خلال 4 ساعات بدل يومين.' });
+window.atlasAddDictionary?.({ 'e.g. Predict lift faults': 'مثال: التنبؤ بأعطال المصاعد' });
+window.atlasAddDictionary?.({
+  'Describe your idea': 'صِف فكرتك', 'A sentence or two for each is enough. Write it as you would explain it to a colleague.': 'تكفي جملة أو جملتان لكل سؤال. اكتبها كما تشرحها لزميل.',
+  'What’s the problem?': 'ما المشكلة؟', 'Who has this problem?': 'من يواجه هذه المشكلة؟', 'What’s your idea?': 'ما فكرتك؟', 'What would change if it works?': 'ما الذي سيتغير إذا نجحت؟',
+  'e.g. We re-key the same claim data into three systems, which adds two days to every approval.': 'مثال: نُدخل بيانات المطالبة نفسها في ثلاثة أنظمة، مما يضيف يومين إلى كل موافقة.',
+  'e.g. Claims processors in four business units, about 40,000 claims a month.': 'مثال: موظفو معالجة المطالبات في أربع وحدات أعمال، نحو 40,000 مطالبة شهريًا.',
+  'e.g. A tool that reads the form once and fills in all three systems.': 'مثال: أداة تقرأ النموذج مرة واحدة وتملأ الأنظمة الثلاثة.',
+  'e.g. Approvals take 4 hours instead of 2 days.': 'مثال: تستغرق الموافقة 4 ساعات بدل يومين.',
+});
+window.atlasAddDictionary?.({ 'Required': 'مطلوب' });
+window.atlasAddDictionary?.({ 'optional · choose any that apply': 'اختياري · اختر كل ما ينطبق' });
+window.atlasAddDictionary?.({ 'Every idea is reviewed from seven perspectives and scored on five factors.': 'تُراجَع كل فكرة من سبع وجهات نظر وتُقيَّم على خمسة عوامل.', 'Close': 'إغلاق' });

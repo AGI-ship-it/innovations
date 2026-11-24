@@ -371,11 +371,23 @@
       </div>
     </div>`;
 
+  // Required fields carry a pink asterisk; screen readers already hear "required" from aria-required on the control.
+  const REQ = '<span class="hl-req" aria-hidden="true">*</span>';
   const field = (label, id, control, { optional, error, aside } = {}) => `
     <div class="hl-field" data-field="${id}">
-      <div class="hl-field-head"><label for="hl-${id}">${label}${optional ? ' <span class="hl-dim">optional</span>' : ''}</label>${aside ? `<span class="hl-dim">${aside}</span>` : ''}</div>
+      <div class="hl-field-head"><label for="hl-${id}">${label}${control.includes('data-required') ? REQ : ''}${optional ? ' <span class="hl-dim">optional</span>' : ''}</label>${aside ? `<span class="hl-dim">${aside}</span>` : ''}</div>
       ${control}
       ${error ? `<p class="hl-error" id="hl-${id}-error" hidden>${error}</p>` : ''}
+    </div>`;
+  // One of the four idea questions: a numbered step on a rail (it turns into a tick once answered), and one box holding the label and the answer.
+  const question = (n, label, hint, id, error) => `
+    <div class="hl-field hl-q" data-field="${id}">
+      <span class="hl-q-n" aria-hidden="true"><b>${n}</b>${ic('check')}</span>
+      <div class="hl-q-box">
+        <label for="hl-${id}" class="hl-q-label">${label}${REQ}</label>
+        <textarea id="hl-${id}" name="${id}" rows="2" data-required aria-required="true" placeholder="${hint}"></textarea>
+      </div>
+      <p class="hl-error" id="hl-${id}-error" hidden>${error}</p>
     </div>`;
   const input = (id, attrs = '') => `<input id="hl-${id}" name="${id}" ${attrs}>`;
   const textarea = (id, attrs = '') => `<textarea id="hl-${id}" name="${id}" ${attrs}></textarea>`;
@@ -386,21 +398,21 @@
     const idea = intent === 'idea';
     return `
       <div class="hl-grid2">
-        ${field('I am a', 'iam', select('iam', opts([['', 'Choose one', true, true], 'Technology vendor', 'Startup', 'Partner', 'Researcher', 'Investor', 'Media']), 'data-required'), { error: 'Choose who you are.' })}
+        ${field('I am a', 'iam', select('iam', opts([['', 'Choose one', true, true], 'Technology vendor', 'Startup', 'Partner', 'Researcher', 'Investor', 'Media']), 'data-required aria-required="true"'), { error: 'Choose who you are.' })}
         ${field('Area of interest', 'area', select('area', opts([['question', 'Ask a question', !idea], ['idea', 'Propose a solution or idea', idea], ['partnership', 'Partnership'], ['media', 'Media enquiry']]), 'data-intent'))}
       </div>
       ${field('Al Ghurair business it relates to', 'biz', select('biz', opts([['group', 'Not sure / Group-wide', true], 'Foods', 'Properties', 'Construction', 'Resources', 'Energy'])), { optional: true })}
       <div class="hl-grid2">
-        ${field('Full name', 'name', input('name', 'autocomplete="name" data-required'), { error: 'Enter your full name.' })}
-        ${field('Work email', 'email', input('email', 'type="email" autocomplete="email" data-required'), { error: 'Enter a work email, like name@company.com.' })}
+        ${field('Full name', 'name', input('name', 'autocomplete="name" data-required aria-required="true"'), { error: 'Enter your full name.' })}
+        ${field('Work email', 'email', input('email', 'type="email" autocomplete="email" data-required aria-required="true"'), { error: 'Enter a work email, like name@company.com.' })}
         ${field('Company or institution', 'company', input('company', 'autocomplete="organization"'))}
         ${field('Mobile', 'mobile', `<span class="hl-phone"><span dir="ltr">+971</span>${input('mobile', 'type="tel" dir="ltr" placeholder="50 123 4567" autocomplete="tel-national"')}</span>`, { optional: true })}
       </div>
       ${field(idea ? 'Describe your solution or idea' : 'Message', 'msg',
-        textarea('msg', `rows="3" maxlength="500" data-required placeholder="${idea ? 'What does it do, and which problem does it solve?' : 'Tell us what you would like to discuss.'}"`),
+        textarea('msg', `rows="3" maxlength="500" data-required aria-required="true" placeholder="${idea ? 'What does it do, and which problem does it solve?' : 'Tell us what you would like to discuss.'}"`),
         { error: idea ? 'Describe your idea in a few lines.' : 'Write a short message.', aside: '<span aria-live="polite" data-counter>0 / 500</span>' })}
       <div class="hl-field" data-field="consent">
-        <label class="hl-check"><input type="checkbox" id="hl-consent" name="consent" value="yes" data-required><span class="hl-box">${ic('check')}</span>I agree that Al Ghurair may use my details to respond to this enquiry.</label>
+        <label class="hl-check"><input type="checkbox" id="hl-consent" name="consent" value="yes" data-required aria-required="true"><span class="hl-box">${ic('check')}</span><span>I agree that Al Ghurair may use my details to respond to this enquiry.${REQ}</span></label>
         <p class="hl-error" id="hl-consent-error" hidden>Tick the box so we can reply to you.</p>
       </div>`;
   };
@@ -412,23 +424,90 @@
       ${segmented('What would you like to do?', intent, [['question', 'Ask a question'], ['idea', 'Share an idea']], 'intent')}
       ${!idea ? `
         ${field('Topic', 'topic', select('topic', opts([['process', 'How the Hub process works', true], 'A technology domain', 'An existing use case', 'Something else'])))}
-        ${field('Your question', 'question', textarea('question', 'rows="4" data-required'), { error: 'Write your question.' })}`
+        ${field('Your question', 'question', textarea('question', 'rows="4" data-required aria-required="true"'), { error: 'Write your question.' })}`
       : `
-        ${field('Idea title', 'title', input('title', 'data-required placeholder="e.g. Predict lift faults before they happen"'), { error: 'Give your idea a short title.' })}
-        <div class="hl-grid2">
+        <div class="hl-grid2 hl-q-top">
+          ${field('Idea title', 'title', input('title', 'data-required aria-required="true" placeholder="e.g. Predict lift faults"'), { error: 'Give your idea a short title.' })}
           ${field('Area it affects', 'affects', select('affects', opts([['ops', 'Operations', true], 'Customer experience', 'Finance', 'People', 'Sustainability'])))}
-          ${field('Who is affected', 'who', input('who', 'placeholder="e.g. Site technicians"'))}
         </div>
-        <div class="hl-grid2">
-          ${field('Problem', 'problem', textarea('problem', 'rows="3" data-required'), { error: 'Describe the problem you see.' })}
-          ${field('Idea', 'idea', textarea('idea', 'rows="3" data-required'), { error: 'Describe your idea.' })}
+        <div class="hl-q-group">
+          <p class="hl-q-legend">Describe your idea <span>A sentence or two for each is enough. Write it as you would explain it to a colleague.</span></p>
+          ${question(1, 'What’s the problem?', 'e.g. We re-key the same claim data into three systems, which adds two days to every approval.', 'problem', 'Describe the problem you see.')}
+          ${question(2, 'Who has this problem?', 'e.g. Claims processors in four business units, about 40,000 claims a month.', 'customer', 'Say who has this problem.')}
+          ${question(3, 'What’s your idea?', 'e.g. A tool that reads the form once and fills in all three systems.', 'idea', 'Describe your idea.')}
+          ${question(4, 'What would change if it works?', 'e.g. Approvals take 4 hours instead of 2 days.', 'value', 'Say what would change if it works.')}
         </div>
-        <fieldset class="hl-benefits"><legend>Expected benefit <span class="hl-dim">optional · choose any</span></legend>
-          <div class="hl-tiles">${BENEFITS.map(([b, icon], i) => `<label class="hl-tile-opt"><input type="checkbox" name="benefit" value="${b}"${i === 0 ? ' checked' : ''}><span class="hl-tile-box"><span class="hl-tile-tick">${ic('check')}</span>${ic(icon)}<span class="hl-tile-label">${b}</span></span></label>`).join('')}</div>
+        <fieldset class="hl-benefits"><legend>Type of value <span class="hl-dim">optional · choose any that apply</span></legend>
+          <div class="hl-tiles">${BENEFITS.map(([b, icon]) => `<label class="hl-tile-opt"><input type="checkbox" name="benefit" value="${b}"><span class="hl-tile-box"><span class="hl-tile-tick">${ic('check')}</span>${ic(icon)}<span class="hl-tile-label">${b}</span></span></label>`).join('')}</div>
         </fieldset>
         ${field('Attachment', 'file', `<label class="hl-file" for="hl-file">${ic('paperclip')} <span data-file-label>Add a file <span class="hl-dim">· up to 10 MB</span></span><input id="hl-file" name="file" type="file"></label>`, { optional: true })}`}`;
   };
 
+
+  /* How ideas are evaluated (from the Innovation Studio triage): seven perspectives react to each idea, five factors are
+     scored and multiplied, and the score suggests Build, Pilot or Stop. The Hub team makes the final call.
+     PROTOTYPE: the score bands (42 and 20) come from the Studio draft and still need to be confirmed. */
+  const PERSPECTIVES = [
+    ['briefcase-business', 'CEO', 'Would I sponsor this?'],
+    ['coins', 'IT Business Partner', 'Economics, return and hidden costs'],
+    ['users-round', 'Customer', 'Would people really use it?'],
+    ['cpu', 'Technology', 'Can we build it on what we have?'],
+    ['scale', 'Risk', 'Compliance and operational risk'],
+    ['swords', 'Challenger', 'Tries to kill the idea'],
+    ['rocket', 'Venture', 'Finds ways to scale it'],
+  ];
+  const FACTORS = [
+    ['Desirability', 'Customer'], ['Feasibility', 'Technology'], ['Financial value', 'IT Business Partner'],
+    ['Strategic fit', 'CEO and Venture'], ['Speed to value', 'Risk and Challenger'],
+  ];
+  const OUTCOMES = [
+    ['build', 'circle-check', 'Build', 'Score 42 or more', 'Moves to a Circle Session with a sponsor.'],
+    ['pilot', 'flask-conical', 'Pilot', 'Score 20 to 41', 'A time-boxed test to gather evidence before we commit capacity.'],
+    ['stop', 'octagon-x', 'Stop', 'Score under 20', 'Closed, and what we learned is published so no one repeats it.'],
+  ];
+  const evaluate = () => `
+    <div class="hl-wrap hl-eval" aria-labelledby="hl-eval-title">
+      <div class="hl-eval-head">
+        <p class="hl-mono hl-kicker">How we evaluate ideas</p>
+        <h3 id="hl-eval-title" class="hl-h3">Seven perspectives. Five factors. One decision.</h3>
+        <p class="hl-body hl-dim">Every idea is reviewed from seven points of view, each reacting independently in its own voice.</p>
+      </div>
+      <ul class="hl-eval-people">${PERSPECTIVES.map(([icon, name, role]) => `
+        <li><span class="hl-eval-icon" aria-hidden="true">${ic(icon)}</span><strong>${name}</strong><span>${role}</span></li>`).join('')}
+      </ul>
+      <div class="hl-eval-score">
+        <div>
+          <p class="hl-mono hl-dim">Innovation score</p>
+          <p class="hl-eval-formula">Desirability × Feasibility × Financial value × Strategic fit × Speed to value</p>
+          <p class="hl-body hl-dim">The five factors multiply, so one weak factor pulls the whole score down.</p>
+        </div>
+        <ol class="hl-eval-factors">${FACTORS.map(([f, from]) => `<li><strong>${f}</strong><span>${from}</span></li>`).join('')}</ol>
+      </div>
+      <ul class="hl-eval-outcomes">${OUTCOMES.map(([cls, icon, name, band, text]) => `
+        <li class="is-${cls}"><span class="hl-eval-o-head">${ic(icon)}<strong>${name}</strong><span class="hl-mono">${band}</span></span><p>${text}</p></li>`).join('')}
+      </ul>
+      <p class="hl-eval-note"><span class="hl-wn-draft">To confirm</span> The score suggests an outcome; the Hub team makes the decision after triage and tells you in Teams.</p>
+    </div>`;
+  // The same content as a pop-up, opened from the line under "Submit idea"
+  const evalDialog = () => `
+    <div class="hl-evd-head">
+      <div><p class="hl-mono hl-kicker">How we evaluate ideas</p>
+        <h2 id="hl-evd-title" class="hl-h3">Seven perspectives. Five factors. One decision.</h2></div>
+      <button type="button" class="hl-square hl-evd-close" data-evd-close aria-label="Close">${ic('x')}</button>
+    </div>
+    <p class="hl-body hl-dim">Every idea is reviewed from seven points of view, each reacting independently in its own voice.</p>
+    <ul class="hl-evd-people">${PERSPECTIVES.map(([icon, name, role]) => `
+      <li><span class="hl-eval-icon" aria-hidden="true">${ic(icon)}</span><span><strong>${name}</strong><span>${role}</span></span></li>`).join('')}
+    </ul>
+    <div class="hl-evd-score">
+      <p class="hl-mono hl-dim">Innovation score</p>
+      <p class="hl-eval-formula">Desirability × Feasibility × Financial value × Strategic fit × Speed to value</p>
+      <p class="hl-body hl-dim">The five factors multiply, so one weak factor pulls the whole score down.</p>
+    </div>
+    <ul class="hl-eval-outcomes">${OUTCOMES.map(([cls, icon, name, band, text]) => `
+      <li class="is-${cls}"><span class="hl-eval-o-head">${ic(icon)}<strong>${name}</strong><span class="hl-mono">${band}</span></span><p>${text}</p></li>`).join('')}
+    </ul>
+    <p class="hl-eval-note"><span class="hl-wn-draft">To confirm</span> The score suggests an outcome; the Hub team makes the decision after triage and tells you in Teams.</p>`;
   const contact = () => {
     const teams = view === 'teams';
     return `
@@ -440,13 +519,15 @@
             : 'Share your enquiry below and the Hub team will respond. Technology partners, startups and researchers welcome.'}</p>
         </div>
         <div class="hl-card hl-form-card" data-slot="form">${form()}</div>
-      </div>`;
+      </div>`; // "How we evaluate ideas" (evaluate()) is hidden for now; add ${teams ? evaluate() : ''} here to show it.
   };
   const form = () => `
     <form class="hl-form" novalidate>
       <p class="hl-alert" role="alert" hidden>Some required fields are empty. Fill in the fields marked below, then send again.</p>
       ${view === 'teams' ? teamsFields() : publicFields()}
       <div><button type="submit" class="lp-primary hl-btn">${intent === 'idea' ? 'Submit idea' : view === 'teams' ? 'Send question' : 'Send message'} ${ic('arrow-right')}</button></div>
+      ${view === 'teams' && intent === 'idea' ? `<p class="hl-eval-line">${ic('scan-search')}<span>Every idea is reviewed from seven perspectives and scored on five factors.</span>
+        <button type="button" class="hl-eval-link" data-act="eval-open" aria-haspopup="dialog">How we evaluate ideas ${ic('arrow-up-right')}</button></p>` : ''}
       ${view === 'teams' ? `<p class="hl-teams-note">For updates and sessions, <a href="${TEAMS_CHANNEL}" target="_blank" rel="noopener">join the Hub channel on Teams ${ic('arrow-up-right')}</a></p>` : ''}
     </form>`;
   const thanks = () => {
@@ -454,7 +535,7 @@
     return `<div class="hl-thanks" role="status" tabindex="-1">
       <span class="hl-thanks-icon">${ic('check')}</span>
       <p class="hl-h3">${idea ? 'Your idea is on the pad.' : 'Thank you. We’ve got it.'}</p>
-      <p class="hl-body">${idea ? 'The Hub team reviews new ideas every week. We’ll contact you in Teams before it moves into Discovery.'
+      <p class="hl-body">${idea ? 'The Hub team triages new ideas every week from seven perspectives. You’ll hear the outcome, Build, Pilot or Stop, in Teams.'
         : 'Someone from the Hub will reply to your email within five working days.'}</p>
       <button type="button" class="lp-ghost hl-btn" data-act="again">Send another</button>
     </div>`;
@@ -747,6 +828,40 @@
     back.addEventListener('click', show);
     page.tabIndex = -1;
     window.HubLanding = { show };
+
+    /* "How we evaluate ideas" pop-up: grows out of its link and folds back into it on close */
+    const evd = document.createElement('dialog');
+    evd.className = 'hl-evd'; evd.setAttribute('aria-labelledby', 'hl-evd-title');
+    evd.innerHTML = evalDialog(); document.body.append(evd); paintIcons(evd);
+    let evdAnim = null, evdFrom = null;
+    const evdMotion = () => !reduced() && innerWidth > 760;
+    const evdFold = () => {
+      const b = evdFrom?.isConnected ? evdFrom.getBoundingClientRect() : null, r = evd.getBoundingClientRect();
+      if (!b) return 'inset(50% 50% 50% 50% round 14px)';
+      const cl = v => Math.max(0, Math.min(v, r.width - 1)), ct = v => Math.max(0, Math.min(v, r.height - 1));
+      return `inset(${ct(b.top - r.top)}px ${cl(r.right - b.right)}px ${ct(r.bottom - b.bottom)}px ${cl(b.left - r.left)}px round 12px)`;
+    };
+    function openEval(from) {
+      evdFrom = from; evdAnim?.cancel(); evd.showModal(); evd.scrollTop = 0;
+      if (!evdMotion()) return;
+      evdAnim = evd.animate([{ clipPath: evdFold(), opacity: .5 }, { clipPath: 'inset(0 0 0 0 round 22px)', opacity: 1 }], { duration: 520, easing: 'cubic-bezier(.22,1,.36,1)' });
+      try { evd.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 320, pseudoElement: '::backdrop' }); } catch { /* no ::backdrop animation */ }
+      evd.querySelectorAll(':scope > *').forEach((c, k) => c.animate([{ opacity: 0, transform: 'translateY(-6px)' }, { opacity: 1, transform: 'none' }],
+        { duration: 360, delay: 120 + Math.min(k, 5) * 40, easing: 'cubic-bezier(.22,1,.36,1)', fill: 'backwards' }));
+      evdAnim.finished.then(() => { evdAnim = null; }, () => {});
+    }
+    function closeEval() {
+      if (!evd.open) return;
+      const back = () => { evd.close(); evd.getAnimations().forEach(a => a.cancel()); evdAnim = null; if (evdFrom?.isConnected) evdFrom.focus(); };
+      if (!evdMotion()) { back(); return; }
+      evdAnim?.cancel();
+      evdAnim = evd.animate([{ clipPath: 'inset(0 0 0 0 round 22px)', opacity: 1 }, { clipPath: evdFold(), opacity: 0 }], { duration: 340, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards' });
+      try { evd.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 340, pseudoElement: '::backdrop', fill: 'forwards' }); } catch { /* no ::backdrop animation */ }
+      evdAnim.finished.then(back, () => {});
+    }
+    evd.addEventListener('cancel', e => { e.preventDefault(); closeEval(); });
+    evd.addEventListener('click', e => { if (e.target === evd || e.target.closest('[data-evd-close]')) closeEval(); });
+    page.addEventListener('click', e => { const t = e.target.closest('[data-act="eval-open"]'); if (t) openEval(t); });
 
     heroStars(page.querySelector('.hl-stars'), page);
     watchCounts();
