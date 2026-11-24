@@ -751,6 +751,7 @@
     heroStars(page.querySelector('.hl-stars'), page);
     watchCounts();
     document.body.classList.add('lp-on', 'lp-reading');
+    document.documentElement.classList.remove('atlas-landing-boot');
     document.title = window.ATLAS_LANG === 'ar' ? 'الغرير | مركز احتضان التقنيات' : 'Al Ghurair | Tech Incubation Hub';
   }
 

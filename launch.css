@@ -5,6 +5,8 @@ body.lp-on { overflow: hidden; }
 body.lp-reading #explore { opacity: 0; pointer-events: none; transition: none; }
 body.lp-reading .command-bar { opacity: 0; pointer-events: none; }
 body.lp-reading #globe-layer { opacity: 0; transition: none; }
+/* First load of the launch page: hide the Radar until hub-landing.js has drawn the page (class set by theme.js) */
+html.atlas-landing-boot #explore, html.atlas-landing-boot .command-bar, html.atlas-landing-boot #globe-layer { visibility: hidden; opacity: 0; transition: none; }
 
 /* The flight: stars streak past on the warp canvas while the photographed rocket flies to the AGI planet */
 .lp-warp { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 950; pointer-events: none; opacity: 0; transition: opacity .3s; }
