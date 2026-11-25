@@ -142,7 +142,7 @@
   const WELCOME = [
     { name: 'Saad Farooq', initials: 'SF', hue: 320, photo: 'sample-1', role: 'Role to confirm', quote: 'Technology moves fast. This radar helps every Al Ghurair business see what is ready today and what is worth watching, so we spend our time on ideas that create real value.' },
     { name: 'Ayesha', initials: 'A', hue: 265, photo: 'sample-2', role: 'Role to confirm', quote: 'The radar is built with our businesses, not for them. Every use case here started as a conversation with a team on the ground. We hope it starts many more.' },
-    { name: 'Rihan', initials: 'R', hue: 200, photo: 'sample-3', role: 'Role to confirm', quote: 'In Facilities, the best ideas come from the people who run our sites every day. This edition shows where technology can make their work safer, simpler and more efficient.' },
+    { name: 'Rehan', initials: 'R', hue: 200, photo: 'sample-3', role: 'Role to confirm', quote: 'In Facilities, the best ideas come from the people who run our sites every day. This edition shows where technology can make their work safer, simpler and more efficient.' },
   ];
   const welcomeNote = (w, mag) => `
     <figure class="${mag ? 'hl-mag-letter' : 'hl-wn'}">

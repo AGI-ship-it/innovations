@@ -167,7 +167,7 @@ window.atlasAddDictionary?.({ 'Our four': 'حالات الاستخدام الأ�
 // Welcome notes (dummy text): Arabic
 window.atlasAddDictionary?.({
   'Role to confirm': 'المنصب قيد التأكيد', 'Draft text': 'نص مبدئي', 'Photo': 'صورة', 'Welcome notes': 'كلمات الترحيب',
-  'Saad Farooq': 'سعد فاروق', 'Ayesha': 'عائشة', 'Rihan': 'ريحان',
+  'Saad Farooq': 'سعد فاروق', 'Ayesha': 'عائشة', 'Rehan': 'ريحان',
   'Technology moves fast. This radar helps every Al Ghurair business see what is ready today and what is worth watching, so we spend our time on ideas that create real value.': 'التقنية تتطور بسرعة. يساعد هذا الرادار كل أعمال الغرير على رؤية ما هو جاهز اليوم وما يستحق المتابعة، لنركّز وقتنا على أفكار تصنع قيمة حقيقية.',
   'The radar is built with our businesses, not for them. Every use case here started as a conversation with a team on the ground. We hope it starts many more.': 'بُني الرادار مع أعمالنا لا من أجلها فقط. كل حالة استخدام هنا بدأت بحوار مع فريق في الميدان، ونأمل أن يفتح حوارات كثيرة غيرها.',
   'In Facilities, the best ideas come from the people who run our sites every day. This edition shows where technology can make their work safer, simpler and more efficient.': 'في المرافق، تأتي أفضل الأفكار من الأشخاص الذين يديرون مواقعنا كل يوم. يُظهر هذا الإصدار أين يمكن للتقنية أن تجعل عملهم أكثر أمانًا وبساطة وكفاءة.',
