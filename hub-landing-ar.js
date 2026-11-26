@@ -224,3 +224,43 @@ window.atlasAddDictionary?.({
 window.atlasAddDictionary?.({ 'Required': 'مطلوب' });
 window.atlasAddDictionary?.({ 'optional · choose any that apply': 'اختياري · اختر كل ما ينطبق' });
 window.atlasAddDictionary?.({ 'Every idea is reviewed from seven perspectives and scored on five factors.': 'تُراجَع كل فكرة من سبع وجهات نظر وتُقيَّم على خمسة عوامل.', 'Close': 'إغلاق' });
+/* Site architecture v4: tabs, Foresight Reports, flipbook, team */
+window.atlasAddDictionary?.({
+  'Foresight Reports': 'تقارير الاستشراف', 'Foresight Report': 'تقرير استشرافي', 'Contact us': 'تواصل معنا', 'Share an idea': 'شارك فكرة',
+  'Explore the Tech Radar': 'استكشف رادار التقنية', 'Tech Radar': 'رادار التقنية', 'Domains': 'المجالات', 'Use case highlights': 'أبرز حالات الاستخدام',
+  'Explore every use case': 'استكشف كل حالات الاستخدام', 'Read the full report': 'اقرأ التقرير كاملاً', 'Open the report': 'افتح التقرير',
+  'What’s coming next, sector by sector.': 'ما هو قادم، قطاعاً بقطاع.',
+  'Each Foresight Report looks at the emerging technology for one sector: the trends, the use cases that matter most and the views of the people who lead it. Open one to read it as a flipbook.': 'يتناول كل تقرير استشرافي التقنيات الناشئة في قطاع واحد: الاتجاهات، وأهم حالات الاستخدام، وآراء من يقودونه. افتح أي تقرير لقراءته ككتاب تفاعلي.',
+  'Emerging Tech Trends in Facility Management': 'اتجاهات التقنيات الناشئة في إدارة المرافق', 'Emerging Tech Trends in Automotive': 'اتجاهات التقنيات الناشئة في قطاع السيارات',
+  'Edition 01 · November 2026': 'الإصدار 01 · نوفمبر 2026', 'Coming soon': 'قريباً',
+  'The technology trends shaping facilities, the use cases that matter most, and views from Faisal and MSL.': 'اتجاهات التقنية التي تشكّل المرافق، وأهم حالات الاستخدام، وآراء فيصل وMSL.',
+  'The next Foresight Report, for Al Ghurair’s automotive businesses.': 'التقرير الاستشرافي القادم لأعمال الغرير في قطاع السيارات.',
+  'Move through the radar: business areas, technology families, then each use case.': 'تنقّل في الرادار: مجالات الأعمال، ثم عائلات التقنية، ثم كل حالة استخدام.',
+  'Emerging Tech Trends in Facility Management: the Foresight Report behind this edition of the radar.': 'اتجاهات التقنيات الناشئة في إدارة المرافق: التقرير الاستشرافي وراء هذا الإصدار من الرادار.',
+  'Our team': 'فريقنا', 'The people behind the Hub. Talk to any of us about an idea.': 'الأشخاص وراء المركز. تحدّث مع أيٍّ منا عن فكرتك.',
+  'Role to confirm': 'المنصب قيد التأكيد', 'Vaibhav': 'فايبهاف', 'Our services': 'خدماتنا', 'Contact the Hub': 'تواصل مع المركز',
+  'Close the report': 'إغلاق التقرير', 'Previous page': 'الصفحة السابقة', 'Next page': 'الصفحة التالية', 'Cover': 'الغلاف',
+  'Contents': 'المحتويات', 'In this report': 'في هذا التقرير', 'Top use cases': 'أهم حالات الاستخدام', 'How ready is it?': 'ما مدى جاهزيتها؟',
+  'Emerging tech trends in FM': 'اتجاهات التقنيات الناشئة في إدارة المرافق', 'A view from': 'رأي من', 'Text and photo to be supplied': 'النص والصورة قيد التزويد',
+  'Draft · the report is being written': 'مسودة · التقرير قيد الكتابة', 'See every use case on the Tech Radar.': 'شاهد كل حالات الاستخدام على رادار التقنية.',
+  'Have an idea or a question about this report? Contact the Hub.': 'لديك فكرة أو سؤال حول هذا التقرير؟ تواصل مع المركز.',
+});
+window.atlasAddDictionary?.({ 'Flipbook · 8 pages': 'كتاب تفاعلي · 8 صفحات', 'In this report': 'في هذا التقرير' });
+window.atlasAddDictionary?.({ 'Facilities Management': 'إدارة المرافق', 'Foods': 'الأغذية', 'Automotive': 'السيارات', 'Healthcare': 'الرعاية الصحية',
+  'Edition 01 · Nov 2026': 'الإصدار 01 · نوفمبر 2026', 'Emerging Tech Trends in Foods': 'اتجاهات التقنيات الناشئة في الأغذية', 'Emerging Tech Trends in Healthcare': 'اتجاهات التقنيات الناشئة في الرعاية الصحية' });
+window.atlasAddDictionary?.({ 'Pages': 'الصفحات', 'Flipbook · 12 pages': 'كتاب تفاعلي · 12 صفحة', 'Foreword': 'تمهيد', 'Why we wrote this report': 'لماذا كتبنا هذا التقرير',
+  'Six trends to know': 'ستة اتجاهات يجب معرفتها', 'Also on the shortlist': 'أيضاً في القائمة المختصرة', 'What stood out to us': 'ما لفت انتباهنا',
+  'Notes from the Hub team': 'ملاحظات من فريق المركز', 'Draft': 'مسودة', 'Sample photo': 'صورة نموذجية', 'Photo to come': 'الصورة لاحقاً', 'What’s next': 'ما التالي' });
+window.atlasAddDictionary?.({ 'Open the Tech Radar': 'افتح رادار التقنية', 'Technology trends': 'اتجاهات التقنية', 'Have an idea or a question about this report? Talk to the Hub.': 'لديك فكرة أو سؤال حول هذا التقرير؟ تحدّث مع المركز.', 'Facilities Management · Edition 01': 'إدارة المرافق · الإصدار 01' });
+window.atlasAddDictionary?.({ 'View all use cases': 'عرض كل حالات الاستخدام' });
+window.atlasAddDictionary?.({ 'Highlights': 'أبرز الأرقام' });
+window.atlasAddDictionary?.({ 'Top 4 use cases': 'أهم 4 حالات استخدام', 'Ranked #1 and #2': 'المرتبة 1 و2', 'Ranked #3 and #4': 'المرتبة 3 و4' });
+window.atlasAddDictionary?.({ 'The top four for Facilities': 'أهم أربع حالات للمرافق', 'The top four, continued': 'أهم أربع حالات، تتمة' });
+window.atlasAddDictionary?.({ 'What we found across 17 technology domains.': 'ما وجدناه عبر 17 مجالاً تقنياً.' });
+window.atlasAddDictionary?.({ 'Senior Vice President, Software Engineering': 'نائب أول للرئيس، هندسة البرمجيات', 'Group Digital & Technology · Al Ghurair': 'الرقمنة والتكنولوجيا في المجموعة · الغرير',
+  'Senior Vice President, Software Engineering · Group Digital & Technology': 'نائب أول للرئيس، هندسة البرمجيات · الرقمنة والتكنولوجيا في المجموعة' });
+window.atlasAddDictionary?.({ 'Demo content': 'محتوى تجريبي', 'Chief Digital, Technology & Global Services Officer': 'الرئيس التنفيذي للرقمنة والتكنولوجيا والخدمات العالمية', 'Group Digital & Technology': 'الرقمنة والتكنولوجيا في المجموعة',
+  'First page': 'الصفحة الأولى', 'Last page': 'الصفحة الأخيرة', 'All pages': 'كل الصفحات', 'Zoom in': 'تكبير', 'Zoom out': 'تصغير', 'Full screen': 'ملء الشاشة', 'Report tools': 'أدوات التقرير' });
+window.atlasAddDictionary?.({ 'Leadership': 'القيادة', 'Leads software engineering across Group Digital & Technology and guides the Hub’s work from discovery to handover.': 'يقود هندسة البرمجيات في الرقمنة والتكنولوجيا بالمجموعة ويوجّه عمل المركز من الاكتشاف حتى التسليم.' });
+window.atlasAddDictionary?.({ 'Amir Barsoum': 'أمير برسوم', 'SVP, Software Engineering': 'نائب أول للرئيس، هندسة البرمجيات' });
+window.atlasAddDictionary?.({ 'Placeholder': 'نص مؤقت' });

@@ -11,27 +11,21 @@
   // PROTOTYPE: the Hub's Teams channel link is not known yet; replace '#' with the channel's share link.
   const TEAMS_CHANNEL = '#';
   const ext = `href="${NEWSROOM}" target="_blank" rel="noopener"`;
-  const SECTIONS = [
+  /* Tabs (site architecture v4, after the website review): Discover (statement + highlights, our services, our team),
+     Foresight Reports (flipbook), Tech Radar (overview), Contact us (have an idea form), then Newsroom as a link. */
+  const TABS = [
     { id: 'discover', label: 'Discover' },
+    { id: 'foresight', label: 'Foresight Reports' },
     { id: 'tech-radar', label: 'Tech Radar' },
-    { id: 'about', label: 'About the Hub' },
-    { id: 'contact', label: 'Contact' },
+    { id: 'contact', label: 'Contact us' },
   ];
+  const tabHref = id => { const u = new URLSearchParams(location.search); if (id === 'discover') u.delete('tab'); else u.set('tab', id); const q = u.toString(); return q ? `?${q}` : './'; };
   // Hub figures (last updated 18 Nov 2026). Use cases come from the Atlas data, so they stay in step with the Hub.
   const useCases = () => window.RADAR_DATA?.useCases?.length || 68;
   const KPIS = {
     public: () => [['Use cases', useCases()], ['Prototypes', 3], ['Tech domains', 17], ['Businesses', 1]],
     teams: () => [['Discovering', 77], ['Validations', useCases()], ['Prototype', 3], ['Handovers', 10]], // Handovers: placeholder (was Quick wins), to confirm
   };
-  // Hub news (copy from the site lofi). Key phrases are marked with <b>; each card has an icon and a category colour.
-  const NEWS = [
-    { label: 'Strategy', when: 'Nov 2026', icon: 'handshake', title: 'Co-creation becomes a standard step in validation',
-      body: 'The Hub has introduced <b>co-creation</b> as a core part of its validation stage. Business teams and the Hub <b>jointly design future processes</b> and agree the business value of each use case <b>before any prototype is built</b>.' },
-    { label: 'Process', when: 'Sep 2026', icon: 'scan-search', title: 'Innovation Office initiates evidence-based use case discovery',
-      body: 'The Al Ghurair Innovation Office has initiated a <b>structured discovery process</b> for the Group’s businesses. It brings together business insight, market benchmarking and technology foresight into <b>one evidence-based use case catalogue</b>.' },
-    { label: 'Strategy', when: '2026', icon: 'route', title: 'A four-stage lifecycle for new products and services', stages: true,
-      body: 'The Tech Incubation Hub has defined <b>a single lifecycle</b>. It gives every business a clear, repeatable path from idea to implementation.' },
-  ];
   /* Where we look: read from the use cases. The best-ranked use case in each service line, then the top four of
      those, so the band follows the Hub's own prioritisation. Each has a photo in assets/landing/usecases/<id>.jpg. */
   const FOCUS_PHOTOS = ['uc-40', 'uc-34', 'uc-14', 'uc-03'];
@@ -96,6 +90,7 @@
   const viewSwitch = () => segmented('Audience view', view, [['public', 'Public'], ['teams', 'Teams']], 'view');
 
   const kpis = () => `
+    <p class="hl-mono hl-dim hl-kpi-label">Highlights</p>
     <dl class="hl-kpis">
       ${KPIS[view]().map(([l, v]) => `<div><dt>${l}</dt><dd><span class="hl-count" data-to="${v}" aria-label="${v}">${reduced() ? String(v).padStart(2, '0') : '00'}</span></dd></div>`).join('')}
     </dl>
@@ -115,8 +110,8 @@
           <h1 id="hl-hero-title" class="hl-display"><span class="hl-line">Turning innovative ideas</span> <span class="hl-line"><em>into</em> scalable solutions</span></h1>
           <p class="hl-lede">We discover, validate and prototype new technology across Al Ghurair’s businesses.</p>
           <div class="hl-actions">
-            <button type="button" class="lp-ghost hl-btn" data-act="build">Share ideas ${ic('arrow-right')}</button>
-            <button type="button" class="lp-launch hl-btn hl-launch" data-act="hub">Enter the Radar ${ic('arrow-up-right')}</button>
+            <a href="#about" class="lp-primary hl-btn" data-to="about">Our services ${ic('arrow-down')}</a>
+            <a href="#team" class="lp-ghost hl-btn" data-to="team">Our team ${ic('arrow-down')}</a>
           </div>
         </div>
         <div class="hl-clock" data-slot="kpis">${kpis()}</div>
@@ -124,9 +119,7 @@
     </section>`;
 
 
-  /* Emerging Tech Radar intro, in two versions for review: the site's own design (default) and a magazine spread
-     (?launch&radar=magazine). Both read the same data. Welcome notes are placeholders until leadership supplies them. */
-  const RADAR_STYLE = new URLSearchParams(location.search).get('radar') === 'magazine' ? 'magazine' : 'site';
+  /* ---------- Tech Radar page: domains, the radar, use case highlights, then Enter the Radar and the full report ---------- */
   const MATURITY = [
     ['Established', 3, 'Proven and in use. Ready to scale across the business.'],
     ['Scaling', 2, 'Working in early sites. Being rolled out more widely.'],
@@ -136,38 +129,6 @@
     const all = window.RADAR_DATA?.useCases || [], by = m => all.filter(u => u.maturity === m).length;
     return { cases: all.length, domains: DOMAINS.length, by };
   };
-  const dots = n => `<span class="hl-rd-dots" aria-hidden="true">${[1, 2, 3].map(i => `<i class="${i <= n ? 'on' : ''}"></i>`).join('')}</span>`;
-  /* Welcome notes: DUMMY text for the prototype. Names are placeholders from the team; the words, roles and photos must
-     come from each person (through Group Communications) before anything is shared. Each note is marked "Draft text". */
-  const WELCOME = [
-    { name: 'Saad Farooq', initials: 'SF', hue: 320, photo: 'sample-1', role: 'Role to confirm', quote: 'Technology moves fast. This radar helps every Al Ghurair business see what is ready today and what is worth watching, so we spend our time on ideas that create real value.' },
-    { name: 'Ayesha', initials: 'A', hue: 265, photo: 'sample-2', role: 'Role to confirm', quote: 'The radar is built with our businesses, not for them. Every use case here started as a conversation with a team on the ground. We hope it starts many more.' },
-    { name: 'Rehan', initials: 'R', hue: 200, photo: 'sample-3', role: 'Role to confirm', quote: 'In Facilities, the best ideas come from the people who run our sites every day. This edition shows where technology can make their work safer, simpler and more efficient.' },
-  ];
-  const welcomeNote = (w, mag) => `
-    <figure class="${mag ? 'hl-mag-letter' : 'hl-wn'}">
-      <span class="hl-wn-photo is-photo" aria-hidden="true"><img src="assets/landing/people/${w.photo}.jpg" alt="" loading="lazy"><small>Sample photo</small></span>
-      <div class="hl-wn-text">
-        <blockquote><p>${w.quote}</p></blockquote>
-        <figcaption><strong>${w.name}</strong><span class="hl-dim">${w.role}</span></figcaption>
-        <span class="hl-wn-draft">Draft text</span>
-      </div>
-    </figure>`;
-  const notePlaceholder = (from, mag) => `
-    <figure class="${mag ? 'hl-mag-letter' : 'hl-rd-note'}">
-      <span class="hl-rd-portrait" aria-hidden="true">${ic('user-round')}</span>
-      <figcaption>
-        <span class="hl-mono hl-dim">Welcome note</span>
-        <strong>${from}</strong>
-        ${mag ? '<span class="hl-mag-lines" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>' : ''}
-        <span class="hl-rd-pending">Text and photo to be supplied</span>
-      </figcaption>
-    </figure>`;
-  const VIEWS = [
-    ['orbit', 'Explore', 'Move through the radar: business areas, technology families, then each use case.', 'Enter the Radar', 'data-act="hub-dissolve"', 'Live'],
-    ['newspaper', 'Stories', 'Short articles on the use cases that matter most, and what they have delivered.', 'Read the stories', 'data-to="hl-stories"', 'Live'],
-    ['book-open', 'Report', 'The full edition to read start to finish, built from the same data.', 'Coming later', '', 'Later'],
-  ];
 
   /* The radar graphic: every use case is a dot. Rings are maturity (Established inside, Emerging outside), sectors are
      the service lines. Positions are fixed per use case, so the picture is the same on every visit. */
@@ -179,7 +140,7 @@
     const dots = all.map(u => {
       const g = Math.max(0, groups.indexOf(u.groupId)), [r0, r1] = band[u.maturity] || band.Scaling;
       const a = (g + .12 + hash(u.id + 'a') * .76) / n * Math.PI * 2 - Math.PI / 2, r = (r0 + hash(u.id + 'r') * (r1 - r0)) * R;
-      return `<circle cx="${(C + Math.cos(a) * r).toFixed(1)}" cy="${(C + Math.sin(a) * r).toFixed(1)}" r="4.2" fill="${colour[u.maturity] || '#fff'}" style="color:${colour[u.maturity] || '#fff'}"/>`;
+      return `<circle cx="${(C + Math.cos(a) * r).toFixed(1)}" cy="${(C + Math.sin(a) * r).toFixed(1)}" r="4.2" fill="${colour[u.maturity] || '#fff'}"/>`;
     }).join('');
     const spokes = groups.map((_, i) => { const a = i / n * Math.PI * 2 - Math.PI / 2; return `<line x1="${C}" y1="${C}" x2="${(C + Math.cos(a) * R).toFixed(1)}" y2="${(C + Math.sin(a) * R).toFixed(1)}"/>`; }).join('');
     return `<svg viewBox="0 0 420 420" aria-hidden="true">
@@ -192,100 +153,48 @@
       <circle cx="${C}" cy="${C}" r="5" fill="#fff"/>
     </svg>`;
   };
-  const radarIntro = () => {
+  const radarVisual = () => {
     const st = radarStats();
-    if (RADAR_STYLE === 'magazine') return `
-      <div class="hl-block hl-mag">
-        <div class="hl-mag-spread">
-          <div class="hl-mag-cover">
-            <p class="hl-mono hl-mag-issue">Edition 01 <span>·</span> Facilities <span>·</span> November 2026</p>
-            <p class="hl-mag-headline">${st.domains} domains. ${st.cases} use cases. One map of what comes next.</p>
-            <p class="hl-mag-standfirst">The Emerging Tech Radar is how the Hub tracks new technology for Al Ghurair’s businesses: what it is, how ready it is, and where it can help.</p>
-          </div>
-          <nav class="hl-mag-contents" aria-label="In this edition">
-            <p class="hl-mono hl-dim">In this edition</p>
-            <ol>
-              <li><a href="#hl-mag-welcome" data-to="hl-mag-welcome"><span>01</span>Welcome notes</a></li>
-              <li><a href="#hl-mag-glance" data-to="hl-mag-glance"><span>02</span>The radar at a glance</a></li>
-              <li><a href="#hl-stories" data-to="hl-stories"><span>03</span>Story highlights</a></li>
-              <li><button type="button" data-act="hub-dissolve"><span>04</span>Explore the radar</button></li>
-              <li class="is-later"><span><span>05</span>The full report</span><em class="hl-mono">Later</em></li>
-            </ol>
-          </nav>
-        </div>
-        <div id="hl-mag-welcome" class="hl-mag-letters">
-          ${WELCOME.map(w => welcomeNote(w, true)).join('')}
-        </div>
-        <div id="hl-mag-glance" class="hl-mag-glance">
-          <p class="hl-mono hl-dim">The radar at a glance</p>
-          <ul>${MATURITY.map(([m, n, t]) => `<li class="is-${m.toLowerCase()}"><strong>${st.by(m)}</strong><span class="hl-mag-m">${dots(n)}${m}</span><p>${t}</p></li>`).join('')}</ul>
-        </div>
-      </div>`;
     return `
-      <div class="hl-block hl-rd2">
-        <div class="hl-rd2-panel">
-          <figure class="hl-rd2-scope" aria-label="${st.cases} use cases plotted by maturity: ${st.by('Established')} established, ${st.by('Scaling')} scaling, ${st.by('Emerging')} emerging">${radarSvg()}</figure>
-          <div class="hl-rd2-copy">
-            <p class="hl-mono hl-kicker">Edition 01 · Facilities</p>
-            <p class="hl-rd2-title">Every use case we track, on one map.</p>
-            <p class="hl-body">Each dot is a use case. The closer to the centre, the more ready it is to use today.</p>
-            <ul class="hl-rd2-legend">${MATURITY.map(([m, n, t]) => `<li class="is-${m.toLowerCase()}"><span class="hl-rd2-swatch" aria-hidden="true"></span><strong>${st.by(m)}</strong><span><b>${m}</b> ${t}</span></li>`).join('')}</ul>
-            <div class="hl-rd2-foot">
-              <button type="button" class="lp-launch hl-btn hl-launch" data-act="hub-dissolve">Enter the Radar ${ic('arrow-up-right')}</button>
-              <p class="hl-dim">${st.domains} tech domains · 1 of 4 business areas live</p>
-            </div>
-          </div>
-        </div>
-        <div class="hl-rd2-welcome">
-          <div class="hl-wn-head">
-            <p class="hl-mono hl-dim">Welcome notes</p>
-            <div class="hl-wn-nav">
-              <button type="button" class="hl-square" data-act="wn-prev" aria-label="Previous note">${ic('arrow-left')}</button>
-              <button type="button" class="hl-square" data-act="wn-next" aria-label="Next note">${ic('arrow-right')}</button>
-            </div>
-          </div>
-          <div class="hl-wn-track" tabindex="0" aria-label="Welcome notes">${WELCOME.map(w => welcomeNote(w)).join('')}</div>
-        </div>
-        <div class="hl-rd2-row">
-          <div class="hl-rd2-card is-later">
-            <span class="hl-rd-icon" aria-hidden="true">${ic('book-open')}</span>
-            <strong>Report</strong><span class="hl-body">The full edition to read start to finish, built from the same data.</span>
-            <span class="hl-tag hl-tag-in-flight">Coming later</span>
-          </div>
+      <div class="hl-rd2-panel">
+        <figure class="hl-rd2-scope" aria-label="${st.cases} use cases plotted by maturity: ${st.by('Established')} established, ${st.by('Scaling')} scaling, ${st.by('Emerging')} emerging">${radarSvg()}</figure>
+        <div class="hl-rd2-copy">
+          <p class="hl-mono hl-kicker">Edition 01 · Facilities</p>
+          <h3 class="hl-rd2-title">Every use case we track, on one map.</h3>
+          <p class="hl-body">Each dot is a use case. The closer to the centre, the more ready it is to use today.</p>
+          <ul class="hl-rd2-legend">${MATURITY.map(([m, , t]) => `<li class="is-${m.toLowerCase()}"><span class="hl-rd2-swatch" aria-hidden="true"></span><strong>${st.by(m)}</strong><span><b>${m}</b> ${t}</span></li>`).join('')}</ul>
+          <p class="hl-dim hl-rd2-note">${st.domains} tech domains · 1 of 4 business areas live</p>
         </div>
       </div>`;
   };
-
-  const reader = () => `
-    <section id="tech-radar" class="hl-section" aria-labelledby="hl-radar-title">
+  const useCaseHighlights = () => `
+    <div class="hl-focus" id="hl-stories">
+      <div class="hl-wrap hl-focus-head">
+        <h3 class="hl-h3">Use case highlights</h3>
+        <div class="hl-focus-aside">
+          <p class="hl-body hl-oneline">Our four <b class="hl-pink">top-ranked</b> facilities use cases, and what they have delivered.</p>
+          <button type="button" class="hl-link hl-view-all" data-act="hub-dissolve">View all use cases ${ic('arrow-up-right')}</button>
+        </div>
+      </div>
+      <ul>
+        ${focusCases().map(u => `<li><a href="./#${esc(u.id)}" class="hl-focus-card" aria-label="${esc(u.title)}: see it in the Emerging Tech Radar">
+          <img src="assets/landing/usecases/${FOCUS_PHOTOS.includes(u.id) ? u.id : FOCUS_PHOTOS[0]}.jpg" alt="" loading="lazy">
+          <span class="hl-focus-go" aria-hidden="true">${ic('arrow-up-right')}</span>
+          <span class="hl-focus-rank">#${u.prioritisation.rank} · ${esc(u.prioritisation.category)}</span>
+          <strong class="hl-focus-title">${esc(u.title)}</strong>
+          ${u.value ? `<span class="hl-focus-value">${esc(String(u.value).split(';')[0].trim())}</span>` : ''}
+        </a></li>`).join('')}
+      </ul>
+    </div>`;
+  const radarPage = () => `
+    <section id="tech-radar" class="hl-section hl-tab-first" aria-labelledby="hl-radar-title">
       <div class="hl-wrap">
         <div class="hl-head">
           <h2 id="hl-radar-title" class="hl-h2">Emerging Tech Radar</h2>
           <p class="hl-sub">The new technology we track for Al Ghurair’s businesses: what it is, how ready it is, and where it can help.</p>
         </div>
-        ${radarIntro()}
-      </div>
-      <div class="hl-focus" id="hl-stories">
-        <div class="hl-wrap hl-focus-head">
-          <h3 class="hl-h3">Story highlights</h3>
-          <div class="hl-focus-aside">
-            <p class="hl-body hl-oneline">Our four <b class="hl-pink">top-ranked</b> facilities use cases, and what they have delivered.</p>
-            <button type="button" class="hl-link hl-view-all" data-act="hub-dissolve">View all ${ic('arrow-right')}</button>
-          </div>
-        </div>
-        <ul>
-          ${focusCases().map(u => `<li><a href="./#${esc(u.id)}" class="hl-focus-card" aria-label="${esc(u.title)}: see it in the Emerging Tech Radar">
-            <img src="assets/landing/usecases/${FOCUS_PHOTOS.includes(u.id) ? u.id : FOCUS_PHOTOS[0]}.jpg" alt="" loading="lazy">
-            <span class="hl-focus-go" aria-hidden="true">${ic('arrow-up-right')}</span>
-            <span class="hl-focus-rank">#${u.prioritisation.rank} · ${esc(u.prioritisation.category)}</span>
-            <strong class="hl-focus-title">${esc(u.title)}</strong>
-            ${u.value ? `<span class="hl-focus-value">${esc(String(u.value).split(';')[0].trim())}</span>` : ''}
-          </a></li>`).join('')}
-        </ul>
-      </div>
-      <div class="hl-wrap">
         <div class="hl-block">
-          <h3 class="hl-small-title">Technology trends</h3>
+          <div class="hl-sub-head"><h3 class="hl-h3">Technology trends</h3><p class="hl-body">What we found across ${DOMAINS.length} technology domains.</p></div>
           <div class="hl-trends">
             <div class="hl-brief">
               <p class="hl-mono hl-dim">Trend brief · 2026</p>
@@ -297,34 +206,216 @@
             </ul>
           </div>
           <div class="hl-domains">
-            <button type="button" aria-expanded="false" aria-controls="hl-domain-list" data-act="domains">All 17 technology domains we scan ${ic('chevron-down')}</button>
+            <button type="button" aria-expanded="false" aria-controls="hl-domain-list" data-act="domains">All ${DOMAINS.length} technology domains we scan ${ic('chevron-down')}</button>
             <ul id="hl-domain-list" hidden>${DOMAINS.map(d => `<li>${d}</li>`).join('')}</ul>
           </div>
         </div>
-        <p class="hl-together">Let’s build what comes next, together. <a href="#contact" class="hl-link" data-to="contact">Talk to the Hub ${ic('arrow-right')}</a></p>
+        <div class="hl-block hl-rd2">${radarVisual()}</div>
+      </div>
+      ${useCaseHighlights()}
+    </section>`;
+
+  /* ---------- Foresight Reports: one card per report, each opens a flipbook. Start with one; add more over time. ---------- */
+  const REPORTS = [
+    { id: 'fm', live: true, sector: 'Facilities Management', title: 'Emerging Tech Trends in Facility Management', edition: 'Edition 01 · Nov 2026', cover: 'uc-40', pages: 12 },
+    { id: 'healthcare', sector: 'Healthcare', tone: 'teal', title: 'Emerging Tech Trends in Healthcare' },
+    { id: 'foods', sector: 'Foods', tone: 'green', title: 'Emerging Tech Trends in Foods' },
+    { id: 'automotive', sector: 'Automotive', tone: 'blue', title: 'Emerging Tech Trends in Automotive' },
+  ];
+  /* Each report shows as a closed book on a stage; on hover the cover swings open onto its contents page, the same
+     way the flipbook opens. */
+  const bookArt = r => `
+      <span class="hl-rep-stage" aria-hidden="true">
+        <span class="hl-book${r.live ? '' : ' is-ghost'}${r.tone ? ` is-${r.tone}` : ''}">
+          <span class="hl-book-edge"></span>
+          <span class="hl-book-inside"><span class="hl-book-kick">In this report</span><b>Contents</b><i></i><i></i><i></i><i></i></span>
+          <span class="hl-book-cover">
+            ${r.live ? `<img src="assets/landing/usecases/${r.cover}.jpg" alt="" loading="lazy">` : ''}
+            <span class="hl-book-title"><span>Foresight Report</span><b>${r.title}</b></span>
+          </span>
+        </span>
+      </span>`;
+  // Compact cards, four to a row: the book, the sector, and either "Flipbook · n pages" or "Coming soon"
+  const reportCard = r => r.live ? `
+    <li><button type="button" class="hl-rep is-live" data-act="report" data-report="${r.id}" aria-label="${r.title}: open the flipbook">
+      ${bookArt(r)}
+      <span class="hl-rep-body">
+        <span class="hl-rep-sector">${r.sector}</span>
+        <span class="hl-mono hl-dim">${r.edition}</span>
+        <span class="hl-rep-kind">${ic('book-open')} Flipbook · ${r.pages} pages</span>
+      </span>
+    </button></li>` : `
+    <li><div class="hl-rep is-soon${r.tone ? ` is-${r.tone}` : ''}">
+      ${bookArt(r)}
+      <span class="hl-rep-body">
+        <span class="hl-rep-sector">${r.sector}</span>
+        <span><span class="hl-tag hl-tag-in-flight">Coming soon</span></span>
+      </span>
+    </div></li>`;
+  const foresightPage = () => `
+    <section id="foresight" class="hl-section hl-tab-first" aria-labelledby="hl-fs-title">
+      <div class="hl-wrap">
+        <div class="hl-head">
+          <h2 id="hl-fs-title" class="hl-h2">Foresight Reports</h2>
+          <p class="hl-sub">What’s coming next, sector by sector. Each report looks at the emerging technology for one sector: the trends, the use cases that matter most and the views of the people who lead it. Open one to read it as a flipbook.</p>
+        </div>
+        <ul class="hl-reps">${REPORTS.map(reportCard).join('')}</ul>
       </div>
     </section>`;
 
+  /* The report as a flipbook, laid out like a magazine. PROTOTYPE: the first report is still being written (emerging
+     tech trends in FM, top use cases, views from Faisal and MSL). Figures and use cases come from the radar's data;
+     photos are samples and every note marked "Draft" is dummy text until the team supplies its own. */
+  // Foreword: Saad's title is confirmed; the text is a draft for him to edit.
+  const FOREWORD = { name: 'Saad Farooq', photo: 'sample-1', role: 'Senior Vice President, Software Engineering', unit: 'Group Digital & Technology',
+    lede: 'Facilities is where technology meets people every day: in the buildings we run, the sites we maintain and the customers we serve.',
+    body: [
+      'This first Foresight Report brings together what the Tech Incubation Hub has learned from scanning 17 technology domains and working alongside our facilities teams. It separates what is proven and ready to scale from what still needs a careful pilot.',
+      'Our aim is simple: help every Al Ghurair business invest with confidence, learn from each other, and move from good ideas to working solutions faster.',
+    ] };
+  const PULL = { name: 'Ayesha', photo: 'sample-2', note: 'Every use case here started as a conversation with a site team. The best ideas came from the people who run our buildings.' };
+  const TEAM_NOTES = [
+    { name: 'Saad Farooq', photo: 'sample-1', note: 'The surprise for me was how much is already proven. Most of this is about scaling what works, not betting on the unknown.' },
+    { name: 'Ayesha', photo: 'sample-2', note: 'Energy and comfort came up in almost every site visit. Expect the next pilots to start there.' },
+    { name: 'Rehan', photo: 'sample-3', note: 'We kept it practical: what each technology does, how ready it is, and what it has already delivered for us.' },
+  ];
+  const TREND_ICON = { 'Generative AI & copilots': 'sparkles', 'AI/ML predictive maintenance': 'wrench', 'IoT & smart buildings': 'building-2',
+    'Building systems & HVAC': 'thermometer', 'ESG & carbon tracking': 'leaf', 'Robots, drones & wearables': 'bot' };
+  const reportPages = () => {
+    const r = REPORTS[0], st = radarStats(), top = focusCases(), lead = top[0];
+    const photo = u => FOCUS_PHOTOS.includes(u?.id) ? u.id : FOCUS_PHOTOS[0];
+    const firstLine = t => esc(String(t || '').split(/(?<=\.)\s/)[0]);
+    const draft = '<span class="hl-fb-demo">Demo content</span>';
+    const demo = '<span class="hl-fb-demo">Demo content</span>';
+    const voice = v => `
+      <p class="hl-fb-kick">0${v.n} · A view from</p>
+      <div class="hl-fb-voice">
+        <span class="hl-fb-portrait" aria-hidden="true">${ic('user-round')}<small>Photo to come</small></span>
+        <div><h3 class="hl-fb-h">${v.name}</h3><p class="hl-fb-role"><b>${v.role}</b>${v.unit ? `<span>${v.unit}</span>` : ''}</p></div>
+      </div>
+      <blockquote class="hl-fb-quote">${v.quote}</blockquote>
+      <dl class="hl-fb-qa">${v.qa.map(([q, a]) => `<dt>${q}</dt><dd>${a}</dd>`).join('')}</dl>
+      <p class="hl-fb-demo-note">${demo}<span>Sample text to show the layout. ${v.name}’s own words will replace it.</span></p>`;
+    return [
+      // 0 cover
+      `<div class="hl-fb-cover2">
+        <div class="hl-fb-cover2-top">
+          <p class="hl-fb-cover2-kick">Foresight Report · Edition 01 · November 2026</p>
+          <h2><em>Facility Management:</em> the emerging tech that is ready now, and what to watch next</h2>
+          <i class="hl-fb-cover2-bar" aria-hidden="true"></i>
+          <p class="hl-fb-cover2-brand"><img src="assets/mark-white.svg?v=2" alt="">Tech Incubation Hub<span>Al Ghurair</span></p>
+        </div>
+        <div class="hl-fb-cover2-photo"><img src="assets/landing/usecases/${r.cover}.jpg" alt=""><span>${st.domains} domains · ${st.cases} use cases · 4 views</span></div>
+      </div>`,
+      // 1 foreword: a note from the team
+      `<p class="hl-fb-kick">Foreword</p><h3 class="hl-fb-h">Why we wrote <mark>this report</mark></h3>
+        <div class="hl-fb-foreword">
+          <figure class="hl-fb-fig"><img src="assets/landing/people/${FOREWORD.photo}.jpg" alt=""><figcaption>Sample photo</figcaption></figure>
+          <div>
+            <p class="hl-fb-p hl-fb-lede hl-fb-dropcap">${FOREWORD.lede}</p>
+            ${FOREWORD.body.map(t => `<p class="hl-fb-p">${t}</p>`).join('')}
+          </div>
+        </div>
+        <p class="hl-fb-sign"><b>${FOREWORD.name}</b><span>${FOREWORD.role}</span><span>${FOREWORD.unit} · Al Ghurair</span><span>${draft}</span></p>`,
+      // 2 contents
+      `<p class="hl-fb-kick">In this report</p><h3 class="hl-fb-h">Contents</h3>
+        <ol class="hl-fb-toc">
+          <li><span>01</span>Emerging tech trends in FM<em>3</em></li><li><span>02</span>How ready is it?<em>5</em></li>
+          <li><span>03</span>Top 4 use cases<em>6</em></li><li><span>04</span>A view from Faisal<em>8</em></li>
+          <li><span>05</span>A view from MSL<em>9</em></li><li><span>06</span>Notes from the Hub team<em>10</em></li></ol>
+        <p class="hl-fb-pending">Demo content · the report is being written</p>`,
+      // 3 trends opener: picture + at a glance
+      `<figure class="hl-fb-bleed"><img src="assets/landing/usecases/uc-14.jpg" alt=""><figcaption>Sample photo</figcaption></figure>
+        <p class="hl-fb-kick">01 · Trends</p><h3 class="hl-fb-h">Proven tech today. Bold bets tomorrow.</h3>
+        <ul class="hl-fb-glance"><li><strong>${st.domains}</strong>domains scanned</li><li><strong>${st.cases}</strong>use cases</li><li><strong>${TRENDS.filter(t => !t[2]).length}/${TRENDS.length}</strong>trends ready to scale</li></ul>`,
+      // 4 trends list
+      `<p class="hl-fb-kick">01 · Trends</p><h3 class="hl-fb-h"><mark>Six trends</mark> to know</h3>
+        ${(() => { const list = [...TRENDS.filter(t => !t[2]), ...TRENDS.filter(t => t[2])], now = list.filter(t => !t[2]).length;
+          return `<div class="hl-fb-tsum"><div class="hl-fb-tsum-bar">${list.map(t => `<i class="${t[2] ? 'is-pilot' : 'is-now'}"></i>`).join('')}</div>
+            <p><span class="is-now"><b>${now}</b> ready to scale now</span><span class="is-pilot"><b>${list.length - now}</b> to pilot first</span></p></div>
+          <ol class="hl-fb-trows">${list.map(([d, h, pilot], k) => `<li class="${pilot ? 'is-pilot' : 'is-now'}">
+            <span class="hl-fb-tn">${String(k + 1).padStart(2, '0')}</span>
+            <span class="hl-fb-ti">${ic(TREND_ICON[d] || 'sparkles')}</span>
+            <span class="hl-fb-tt"><b>${d}</b><span>${h}</span></span>
+            <span class="hl-fb-ts">${pilot ? 'Pilot first' : 'Scale now'}</span>
+          </li>`).join('')}</ol>`; })()}`,
+      // 5 maturity + team pull quote
+      `<p class="hl-fb-kick">02 · Readiness</p><h3 class="hl-fb-h"><mark>How ready</mark> is it?</h3>
+        <ul class="hl-fb-stats">${MATURITY.map(([m, , t]) => `<li class="is-${m.toLowerCase()}"><strong>${st.by(m)}</strong><b>${m}</b><span>${t}</span></li>`).join('')}</ul>
+        <aside class="hl-fb-pull"><img src="assets/landing/people/${PULL.photo}.jpg" alt=""><p>“${PULL.note}”<b>${PULL.name} ${draft}</b></p></aside>`,
+      // 6, 7 the top 4 use cases: two to a page, each with its picture, rank, what it is and what it delivered
+      ...[top.slice(0, 2), top.slice(2, 4)].map((pair, k) => `
+        <p class="hl-fb-kick">03 · Top 4 use cases</p><h3 class="hl-fb-h">${k ? 'The <mark>top four</mark>, continued' : 'The <mark>top four</mark> for Facilities'}</h3>
+        <div class="hl-fb-top4">${pair.map((u, n) => `<article>
+          <figure><img src="assets/landing/usecases/${photo(u)}.jpg" alt=""><span>${k * 2 + n + 1}</span></figure>
+          <p class="hl-fb-uc-meta">#${u.prioritisation.rank} overall · ${esc(u.prioritisation.category)} · ${esc(u.maturity)}</p>
+          <h4>${esc(u.title)}</h4>
+          <p class="hl-fb-uc-desc">${firstLine(u.description)}</p>
+          ${u.value ? `<p class="hl-fb-uc-result">${esc(String(u.value).split(';')[0].trim())}</p>` : ''}
+        </article>`).join('')}</div>`),
+      // 8, 9 views
+      voice({ n: 4, name: 'Faisal', role: 'Chief Digital, Technology & Global Services Officer', unit: 'Group Digital & Technology',
+        quote: 'The question is no longer whether to use this technology, but where it pays back first.',
+        qa: [['Where should Facilities start?', 'With what is already proven: predictive maintenance, smart building controls and a single view of every site. These pay back within a year.'],
+             ['What will change in the next three years?', 'AI copilots will sit beside every technician and planner, and our buildings will report their own energy and condition in real time.']] }),
+      voice({ n: 5, name: 'MSL', role: 'Placeholder', unit: '',
+        quote: 'Start with the problems our site teams feel every day. The technology should follow.',
+        qa: [['What makes a pilot succeed?', 'A clear owner on site, a measure agreed before we start, and a decision date. Without those, pilots drift.'],
+             ['What should we watch?', 'Robots and drones for inspection, and carbon tracking that customers can see for themselves.']] }),
+      // 10 notes from the team
+      `<p class="hl-fb-kick">06 · Notes from the Hub team</p><h3 class="hl-fb-h">What <mark>stood out</mark> to us</h3>
+        <ul class="hl-fb-notes">${TEAM_NOTES.map(n => `<li><img src="assets/landing/people/${n.photo}.jpg" alt=""><p>${n.note}<b>${n.name}</b></p></li>`).join('')}</ul>
+        <p class="hl-fb-pending">Demo content · sample photos</p>`,
+      // 11 back
+      `<div class="hl-fb-end"><p class="hl-fb-kick">What’s next</p><h3 class="hl-fb-h">See every use case on the <mark>Tech Radar</mark></h3>
+        <p class="hl-fb-p">The next Foresight Reports cover Healthcare, Foods and Automotive.</p>
+        <p class="hl-fb-p">Have an idea or a question about this report? Talk to the Hub.</p>
+        <div class="hl-fb-ctas"><button type="button" class="hl-fb-cta is-main" data-fb="radar">Open the Tech Radar <span aria-hidden="true">→</span></button><button type="button" class="hl-fb-cta" data-fb="contact">Contact the Hub</button><a class="hl-fb-cta" href="assets/reports/foresight-facility-management-edition-01.pdf" download>Download PDF</a></div></div>`,
+    ];
+  };
 
-  /* Hub news: part of About the Hub */
-  const hubNews = () => `
-    <div class="hl-block hl-news-block">
-      <div class="hl-block-head"><h3>Latest from the Hub</h3><span class="hl-mono hl-dim">${NEWS.length} updates</span></div>
-      <ul class="hl-news" aria-label="Hub news">
-        ${NEWS.map(n => `<li class="hl-news-card" data-kind="${n.label.toLowerCase()}">
-          <p class="hl-news-meta"><i aria-hidden="true"></i>${n.label}<span>·</span>${n.when}</p>
-          <p class="hl-news-title">${n.title}</p>
-          <p class="hl-body">${n.body.replace(/<\/?b>/g, '')}</p>
-          ${n.stages ? `<p class="hl-news-stages">${STAGES.map(st => st.name).join('<span>→</span>')}</p>` : ''}
+  /* ---------- Our team (Discover). PROTOTYPE: names from the team; roles and photos to be confirmed. ---------- */
+  /* Team: the lead first, as a feature; the rest as matching compact cards. PROTOTYPE: Saad's title is confirmed;
+     the intro and the other roles are placeholders (marked) until the team supplies them. */
+  const TEAM = [
+    { name: 'Saad Farooq', initials: 'SF', photo: 'sample-1', lead: true, role: 'SVP, Software Engineering' },
+    { name: 'Ayesha', initials: 'A', photo: 'sample-2' },
+    { name: 'Rehan', initials: 'R', photo: 'sample-3' },
+    { name: 'Amir Barsoum', initials: 'AB', photo: 'sample-4' },
+  ];
+  // "Have an idea?" closes Discover, after the team: a card for Al Ghurair teams, a line for everyone else
+  const ideaCta = () => view === 'teams' ? `
+          <div class="hl-card hl-idea">
+            <div><p class="hl-h3">Have an idea?</p><p class="hl-body">Tell us the problem. We’ll take it from Discovery.</p></div>
+            <button type="button" class="lp-primary hl-btn" data-act="idea">Share your idea ${ic('arrow-down')}</button>
+          </div>`
+        : `<p class="hl-body hl-more">Want to work with the Hub? <a href="#contact" class="hl-link" data-to="contact">Contact us ${ic('arrow-right')}</a></p>`;
+  const team = () => `
+    <div class="hl-wrap">
+      <div class="hl-head">
+        <p class="hl-mono hl-kicker">About the Hub</p>
+        <h2 id="hl-team-title" class="hl-h2">Our team</h2>
+        <p class="hl-sub">The people behind the Hub. Talk to any of us about an idea.</p>
+      </div>
+      <ul class="hl-team2">
+        ${TEAM.map(m => `<li class="hl-tm${m.lead ? ' is-lead' : ''}">
+          <span class="hl-tm-photo" aria-hidden="true">${m.photo ? `<img src="assets/landing/people/${m.photo}.jpg" alt="" loading="lazy"><small>Sample photo</small>` : `<b>${m.initials}</b><small>Photo to come</small>`}</span>
+          <div class="hl-tm-body">
+            <strong>${m.name}</strong>
+            <span class="hl-tm-role">${m.role || 'Placeholder'}</span>
+          </div>
         </li>`).join('')}
       </ul>
+      <div class="hl-team-cta" data-slot="idea-cta">${ideaCta()}</div>
     </div>`;
+
   const about = () => {
     const compact = view === 'teams';
     return `
       <div class="hl-wrap">
         <div class="hl-head">
-          <h2 id="hl-about-title" class="hl-h2">About the Hub</h2>
+          <p class="hl-mono hl-kicker">About the Hub</p>
+          <h2 id="hl-about-title" class="hl-h2">Our services</h2>
           <p class="hl-sub">A structured, four-stage process takes every idea from insight to a scalable prototype, ready for delivery.</p>
         </div>
         <ol class="hl-stages">
@@ -337,13 +428,6 @@
           </li>`).join('')}
         </ol>
         ${compact ? capExplorer() : ''}
-        ${hubNews()}
-        ${compact ? `
-          <div class="hl-card hl-idea">
-            <div><p class="hl-h3">Have an idea?</p><p class="hl-body">Tell us the problem. We’ll take it from Discovery.</p></div>
-            <button type="button" class="lp-primary hl-btn" data-act="idea">Share your idea ${ic('arrow-down')}</button>
-          </div>`
-        : `<p class="hl-body hl-more">Want to work with the Hub? <a href="#contact" class="hl-link" data-to="contact">Contact us ${ic('arrow-right')}</a></p>`}
       </div>`;
   };
 
@@ -520,6 +604,8 @@
           <h2 id="hl-contact-title" class="hl-h2">${teams ? 'Bring us a question or an idea.' : 'Have a question or an idea?'}</h2>
           <p class="hl-lede">${teams ? 'Tell us what you’re seeing, and we’ll reply within five working days.'
             : 'Share your enquiry below and the Hub team will respond. Technology partners, startups and researchers welcome.'}</p>
+          ${teams ? `<p class="hl-eval-line is-aside">${ic('scan-search')}<span>Every idea is reviewed from seven perspectives and scored on five factors.</span>
+            <button type="button" class="hl-eval-link" data-act="eval-open" aria-haspopup="dialog">How we evaluate ideas ${ic('arrow-up-right')}</button></p>` : ''}
         </div>
         <div class="hl-card hl-form-card" data-slot="form">${form()}</div>
       </div>`; // "How we evaluate ideas" (evaluate()) is hidden for now; add ${teams ? evaluate() : ''} here to show it.
@@ -529,8 +615,6 @@
       <p class="hl-alert" role="alert" hidden>Some required fields are empty. Fill in the fields marked below, then send again.</p>
       ${view === 'teams' ? teamsFields() : publicFields()}
       <div><button type="submit" class="lp-primary hl-btn">${intent === 'idea' ? 'Submit idea' : view === 'teams' ? 'Send question' : 'Send message'} ${ic('arrow-right')}</button></div>
-      ${view === 'teams' && intent === 'idea' ? `<p class="hl-eval-line">${ic('scan-search')}<span>Every idea is reviewed from seven perspectives and scored on five factors.</span>
-        <button type="button" class="hl-eval-link" data-act="eval-open" aria-haspopup="dialog">How we evaluate ideas ${ic('arrow-up-right')}</button></p>` : ''}
       ${view === 'teams' ? `<p class="hl-teams-note">For updates and sessions, <a href="${TEAMS_CHANNEL}" target="_blank" rel="noopener">join the Hub channel on Teams ${ic('arrow-up-right')}</a></p>` : ''}
     </form>`;
   const thanks = () => {
@@ -552,26 +636,27 @@
             <p class="hl-footer-name"><span class="hl-tile"><img src="assets/mark-white.svg?v=2" alt="" width="22" height="22"></span>Tech Incubation Hub</p>
             <p class="hl-footer-tag">In pursuit of better.</p>
             <div class="hl-actions">
-              <button type="button" class="lp-launch hl-btn hl-launch" data-act="hub-dissolve">Enter the Radar ${ic('arrow-up-right')}</button>
               <a href="#contact" class="lp-ghost hl-btn" data-to="contact">Contact the Hub</a>
             </div>
           </div>
           <div><p class="hl-small-title">Read</p><ul>
-            <li><a href="#tech-radar" data-to="tech-radar">Tech Radar</a></li>
-            <li><a ${ext}>Newsroom hub ${ic('arrow-up-right')}</a></li></ul></div>
+            <li><a href="${tabHref('foresight')}" data-tab="foresight">Foresight Reports</a></li>
+            <li><a href="${tabHref('tech-radar')}" data-tab="tech-radar">Tech Radar</a></li>
+            <li><a ${ext}>Newsroom ${ic('arrow-up-right')}</a></li></ul></div>
           <div><p class="hl-small-title">The Hub</p><ul>
-            <li><a href="#about" data-to="about">Our process</a></li>
+            <li><a href="#about" data-to="about">Our services</a></li>
+            <li><a href="#team" data-to="team">Our team</a></li>
             <li><button type="button" data-act="idea">Share an idea</button></li>
-            <li><a href="#contact" data-to="contact">Contact</a></li></ul></div>
+</ul></div>
         </div>
         <div class="hl-footer-base">
           <p>© 2026 Al Ghurair · Tech Incubation Hub</p>
-          <p>Al Ghurair teams: <button type="button" data-act="idea">share an idea</button> · Partners and media: <a href="#contact" data-to="contact">contact us</a></p>
         </div>
       </div>
     </footer>`;
 
   /* ---------- Build ---------- */
+  let tab = TABS.some(t => t.id === params.get('tab')) ? params.get('tab') : 'discover';
   function build() {
     const page = document.createElement('div');
     page.className = 'hl-page';
@@ -585,7 +670,7 @@
             <span class="hl-brand-words"><strong>Al Ghurair<span class="hl-sep" aria-hidden="true"> · </span>Tech Incubation Hub</strong><span>Emerging Tech Radar</span></span>
           </a>
           <nav class="hl-nav" aria-label="Sections">
-            ${SECTIONS.map(s => `<a href="#${s.id}" data-to="${s.id}">${s.label}</a>`).join('')}
+            ${TABS.map(t => `<a href="${tabHref(t.id)}" data-tab="${t.id}"${t.id === tab ? ' aria-current="page"' : ''}>${t.label}</a>`).join('')}
             <a ${ext}>Newsroom ${ic('arrow-up-right')}</a>
           </nav>
           <div class="hl-bar-end">
@@ -594,13 +679,12 @@
               <button type="button" class="lang-option is-ar" lang="ar" aria-label="العربية" data-tooltip="العربية" aria-pressed="${window.ATLAS_LANG === 'ar'}" data-lang="ar">ع</button>
             </div>
             <div class="hl-view-wide" data-slot="view">${viewSwitch()}</div>
-            <button type="button" class="lp-launch hl-radar-btn" data-act="hub-dissolve" aria-label="Enter the Emerging Tech Radar">${ic('rocket')}<span>Enter the Radar</span></button>
             <button type="button" class="hl-square hl-menu-btn" aria-label="Open menu" data-tooltip="Menu" aria-expanded="false" aria-controls="hl-menu" data-act="menu">${ic('menu')}</button>
           </div>
         </div>
         <div id="hl-menu" class="hl-menu" hidden>
           <nav aria-label="Sections, mobile">
-            ${SECTIONS.map(s => `<a href="#${s.id}" data-to="${s.id}">${s.label}</a>`).join('')}
+            ${TABS.map(t => `<a href="${tabHref(t.id)}" data-tab="${t.id}"${t.id === tab ? ' aria-current="page"' : ''}>${t.label}</a>`).join('')}
             <a ${ext}>Newsroom ${ic('arrow-up-right')}</a>
           </nav>
           <div class="hl-view-narrow" data-slot="view">${viewSwitch()}</div>
@@ -608,15 +692,18 @@
       </header>
       <div class="hl-side">
         <div class="hl-view-side" data-slot="view">${viewSwitch()}</div>
-        <nav class="hl-rail" aria-label="Section progress">
-          ${SECTIONS.map(s => `<a href="#${s.id}" data-to="${s.id}" aria-label="${s.label}"><span></span></a>`).join('')}
-        </nav>
       </div>
       <main>
-        ${hero()}
-        ${reader()}
-        <section id="about" class="hl-section hl-about" aria-labelledby="hl-about-title" data-slot="about">${about()}</section>
-        <section id="contact" class="hl-section" aria-labelledby="hl-contact-title" data-slot="contact">${contact()}</section>
+        <div class="hl-panel" data-panel="discover">
+          ${hero()}
+          <section id="about" class="hl-section hl-about" aria-labelledby="hl-about-title" data-slot="about">${about()}</section>
+          <section id="team" class="hl-section hl-team-section" aria-labelledby="hl-team-title">${team()}</section>
+        </div>
+        <div class="hl-panel" data-panel="foresight">${foresightPage()}</div>
+        <div class="hl-panel" data-panel="tech-radar">${radarPage()}</div>
+        <div class="hl-panel" data-panel="contact">
+          <section id="contact" class="hl-section hl-tab-first" aria-labelledby="hl-contact-title" data-slot="contact">${contact()}</section>
+        </div>
       </main>
       ${footer()}`;
 
@@ -629,6 +716,24 @@
 
     const $ = s => page.querySelector(s), $$ = s => [...page.querySelectorAll(s)];
     const slots = name => $$(`[data-slot="${name}"]`);
+    /* One scrolling page: the nav scrolls to each part, and the part in view is the one selected in the nav
+       (and in the address, as ?tab=, so a shared link opens at the same place). */
+    const markTab = t => {
+      if (t === tab) return; tab = t;
+      $$('.hl-nav [data-tab], .hl-menu [data-tab]').forEach(a => { if (a.dataset.tab === t) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
+      history.replaceState(history.state, '', tabHref(t));
+    };
+    function setTab(t, { focus = false, instant = false } = {}) {
+      const panel = $(`[data-panel="${t}"]`); if (!panel) return;
+      if (t === 'discover') page.scrollTo({ top: 0, behavior: reduced() || instant ? 'auto' : 'smooth' });
+      else panel.scrollIntoView({ behavior: reduced() || instant ? 'auto' : 'smooth' });
+      markTab(t);
+      const title = panel.querySelector('h1, h2');
+      if (focus && title) { title.tabIndex = -1; title.focus({ preventScroll: true }); }
+    }
+    const tabIO = new IntersectionObserver(entries => entries.forEach(e => { if (e.isIntersecting) markTab(e.target.dataset.panel); }),
+      { root: page, rootMargin: '-40% 0px -55% 0px' });
+    addEventListener('popstate', () => { const t = new URLSearchParams(location.search).get('tab') || 'discover'; if (!page.hidden) setTab(t); });
     const scrollTo = id => page.querySelector(`#${id}`)?.scrollIntoView({ behavior: reduced() ? 'auto' : 'smooth' });
 
     /* Count up the mission clock when it comes into view. */
@@ -651,6 +756,7 @@
       slots('view').forEach(s => { s.innerHTML = viewSwitch(); });
       slots('kpis').forEach(s => { s.innerHTML = kpis(); });
       slots('about').forEach(s => { s.innerHTML = about(); });
+      slots('idea-cta').forEach(s => { s.innerHTML = ideaCta(); });
       slots('contact').forEach(s => { s.innerHTML = contact(); });
       paintIcons(page); watchCounts();
       if (focusSeg) focusSeg.closest('[data-slot]')?.querySelector('[aria-checked="true"]')?.focus();
@@ -669,6 +775,8 @@
 
     /* Clicks */
     page.addEventListener('click', e => {
+      const tb = e.target.closest('[data-tab]');
+      if (tb) { e.preventDefault(); closeMenu(); setTab(tb.dataset.tab, { focus: true }); return; }
       const to = e.target.closest('[data-to]');
       if (to) { e.preventDefault(); closeMenu(); scrollTo(to.dataset.to); return; }
       const seg = e.target.closest('[data-seg] [role="radio"]');
@@ -686,9 +794,7 @@
       else if (act === 'hub-dissolve') dissolveToHub();
       else if (act === 'idea') goToIdea();
       else if (act === 'menu') toggleMenu();
-      else if (act === 'wn-prev' || act === 'wn-next') { const t = $('.hl-wn-track'), card = t?.querySelector('.hl-wn'); if (t && card) {
-        const step = (card.getBoundingClientRect().width + 20) * (act === 'wn-next' ? 1 : -1) * (document.dir === 'rtl' ? -1 : 1);
-        t.scrollBy({ left: step, behavior: reduced() ? 'auto' : 'smooth' }); } }
+      else if (act === 'report') openBook(e.target.closest('[data-act]'));
       else if (act === 'domains') { const b = e.target.closest('button'), list = $('#hl-domain-list'), open = b.getAttribute('aria-expanded') !== 'true';
         b.setAttribute('aria-expanded', open); list.hidden = !open; }
       else if (act === 'again') { $('[data-slot="form"]').innerHTML = form(); paintIcons(page); $('[data-slot="form"] input, [data-slot="form"] select')?.focus(); }
@@ -750,14 +856,6 @@
     }
     const closeMenu = () => { if (!$('#hl-menu').hidden) toggleMenu(false); };
 
-    /* Active section: nav underline and the side rail */
-    const sectionIO = new IntersectionObserver(entries => entries.forEach(e => {
-      if (!e.isIntersecting) return;
-      $$('.hl-nav [data-to], .hl-menu [data-to], .hl-rail [data-to]').forEach(a => {
-        if (a.dataset.to === e.target.id) a.setAttribute('aria-current', 'true'); else a.removeAttribute('aria-current'); });
-    }), { root: page, rootMargin: '-45% 0px -50% 0px' });
-    SECTIONS.forEach(s => { const n = page.querySelector(`#${s.id}`); if (n) sectionIO.observe(n); });
-
     /* Scroll: solid top bar once scrolled; the rocket climbs faster than the sky behind it while the hero leaves */
     const heroEl = $('.hl-hero');
     let ticking = false;
@@ -766,7 +864,8 @@
       requestAnimationFrame(() => {
         ticking = false;
         page.classList.toggle('is-scrolled', page.scrollTop > 24);
-        const h = heroEl.offsetHeight, p = Math.min(1, page.scrollTop / h);
+        const h = heroEl.offsetHeight; if (!h) return;
+        const p = Math.min(1, page.scrollTop / h);
         if (p < 1 || heroEl.style.getPropertyValue('--p') !== '1') heroEl.style.setProperty('--p', reduced() ? 0 : p.toFixed(3));
       });
     }, { passive: true });
@@ -866,6 +965,147 @@
     evd.addEventListener('click', e => { if (e.target === evd || e.target.closest('[data-evd-close]')) closeEval(); });
     page.addEventListener('click', e => { const t = e.target.closest('[data-act="eval-open"]'); if (t) openEval(t); });
 
+    /* Foresight Report flipbook: a two-page spread on wide screens, one page on phones. The right-hand page turns over
+       onto the next spread like paper; the buttons and the arrow keys turn pages. */
+    const book = document.createElement('dialog');
+    book.className = 'hl-fb'; book.setAttribute('aria-labelledby', 'hl-fb-title');
+    book.innerHTML = `
+      <div class="hl-fb-top">
+        <p id="hl-fb-title" class="hl-fb-name">${REPORTS[0].title}<span class="hl-fb-count" aria-live="polite"></span></p>
+        <button type="button" class="hl-fb-btn" data-fb="close" aria-label="Close the report">${ic('x')}</button>
+      </div>
+      <div class="hl-fb-stage">
+        <button type="button" class="hl-fb-arrow is-prev" data-fb="prev" aria-label="Previous page">${ic('chevron-left')}</button>
+        <div class="hl-fb-spread"></div>
+        <button type="button" class="hl-fb-arrow is-next" data-fb="next" aria-label="Next page">${ic('chevron-right')}</button>
+      </div>
+      <div class="hl-fb-thumbs" id="hl-fb-thumbs" hidden></div>
+      <div class="hl-fb-bar" role="toolbar" aria-label="Report tools">
+        <button type="button" class="hl-fb-tool" data-fb="first" aria-label="First page" data-tip="First page">${ic('chevrons-left')}</button>
+        <button type="button" class="hl-fb-tool" data-fb="toc" aria-label="Contents" data-tip="Contents">${ic('list')}</button>
+        <button type="button" class="hl-fb-tool" data-fb="thumbs" aria-label="All pages" data-tip="All pages" aria-expanded="false" aria-controls="hl-fb-thumbs">${ic('layout-grid')}</button>
+        <i aria-hidden="true"></i>
+        <button type="button" class="hl-fb-tool" data-fb="zoom" aria-label="Zoom in" data-tip="Zoom" aria-pressed="false">${ic('zoom-in')}</button>
+        <button type="button" class="hl-fb-tool" data-fb="full" aria-label="Full screen" data-tip="Full screen">${ic('maximize')}</button>
+        <a class="hl-fb-tool" href="assets/reports/foresight-facility-management-edition-01.pdf" download aria-label="Download PDF" data-tip="Download PDF">${ic('download')}</a>
+        <i aria-hidden="true"></i>
+        <button type="button" class="hl-fb-tool" data-fb="last" aria-label="Last page" data-tip="Last page">${ic('chevrons-right')}</button>
+      </div>`;
+    document.body.append(book); paintIcons(book);
+    let pages = [], at = 0, turning = false, bookFrom = null, shownFirst = 0, swipeX = null, swiped = 0;
+    const wideBook = () => innerWidth > 860;
+    const spreads = () => {
+      if (!wideBook()) return pages.map((_, i) => [i]);
+      const out = [[0]]; let i = 1;
+      for (; i < pages.length - 1; i += 2) out.push([i, i + 1]);
+      if (i === pages.length - 1) out.push([i]);
+      return out;
+    };
+    // where each page of a spread sits: the cover alone on the right, the back page alone on the left
+    const sidesOf = sp => !wideBook() ? [sp[0]] : sp.length === 2 ? sp : sp[0] === 0 ? [null, 0] : [sp[0], null];
+    // the page is the size container; its content box (hl-fb-in) is laid out in page widths (cqw)
+    const pageHtml = i => i == null ? '' : `<div class="hl-fb-page${i === 0 ? ' is-cover' : ''}${i % 2 ? ' is-odd' : ''}"><div class="hl-fb-in">${pages[i]}</div>${i ? `<span class="hl-fb-folio"><b>${String(i).padStart(2, '0')}</b>Tech Incubation Hub</span>` : ''}</div>`;
+    const fbSlots = sides => sides.map((i, k) => `<div class="hl-fb-slot ${sides.length === 1 ? 'is-single' : k ? 'is-right' : 'is-left'}">${pageHtml(i)}</div>`).join('');
+    const spreadEl = book.querySelector('.hl-fb-spread');
+    // cover alone sits on the right half, the back page on the left: shift the book so a closed book is centred
+    const shiftFor = sides => !wideBook() || sides.length < 2 ? '' : sides[0] == null ? 'is-shut-front' : sides[1] == null ? 'is-shut-back' : '';
+    const setShift = sides => { spreadEl.classList.remove('is-shut-front', 'is-shut-back'); const c = shiftFor(sides); if (c) spreadEl.classList.add(c); };
+    function renderBook() {
+      const all = spreads(), sides = sidesOf(all[at]);
+      spreadEl.classList.toggle('is-wide', wideBook());
+      spreadEl.innerHTML = fbSlots(sides); paintIcons(spreadEl); setShift(sides);
+      book.querySelector('[data-fb="prev"]').disabled = at === 0;
+      book.querySelector('[data-fb="next"]').disabled = at === all.length - 1;
+      const real = sides.filter(i => i != null); shownFirst = real[0];
+      book.querySelectorAll('[data-fb-go]').forEach(t => { const on = real.includes(+t.dataset.fbGo); t.toggleAttribute('aria-current', on); if (on && !t.closest('[hidden]')) t.scrollIntoView({ block: 'nearest', inline: 'nearest' }); });
+      book.querySelector('.hl-fb-count').textContent = real[0] === 0 ? 'Cover' : `${real.length > 1 ? "Pages" : "Page"} ${real.join("–")} of ${pages.length - 1}`;
+    }
+    function turn(d) {
+      const all = spreads(), to = at + d;
+      if (turning || to < 0 || to >= all.length) return;
+      if (reduced()) { at = to; renderBook(); return; }
+      turning = true;
+      if (!wideBook()) {
+        spreadEl.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: `translateX(${-d * 28}px)` }], { duration: 150, easing: 'ease-in' }).finished.then(() => {
+          at = to; renderBook();
+          spreadEl.animate([{ opacity: 0, transform: `translateX(${d * 28}px)` }, { opacity: 1, transform: 'none' }], { duration: 260, easing: 'cubic-bezier(.22,1,.36,1)' }).finished.then(() => { turning = false; });
+        });
+        return;
+      }
+      const cur = sidesOf(all[at]), nxt = sidesOf(all[to]);
+      // underneath: the page that stays put and the page being uncovered; on top: the leaf that turns
+      const under = d > 0 ? [cur[0], nxt[1]] : [nxt[0], cur[1]];
+      const front = d > 0 ? cur[1] : cur[0], back = d > 0 ? nxt[0] : nxt[1];
+      spreadEl.innerHTML = fbSlots(under) + `<div class="hl-fb-leaf ${d > 0 ? 'is-right' : 'is-left'}"><div class="hl-fb-face is-front">${pageHtml(front)}</div><div class="hl-fb-face is-back">${pageHtml(back)}</div></div>`;
+      paintIcons(spreadEl);
+      const leaf = spreadEl.querySelector('.hl-fb-leaf');
+      setShift(nxt);
+      leaf.animate([{ transform: 'rotateY(0deg)' }, { transform: `rotateY(${d > 0 ? -180 : 180}deg)` }], { duration: 820, easing: 'cubic-bezier(.45,.05,.2,1)' })
+        .finished.then(() => { at = to; renderBook(); turning = false; });
+      leaf.querySelectorAll('.hl-fb-face').forEach(f => f.animate([{ filter: 'brightness(1)' }, { filter: 'brightness(.78)', offset: .5 }, { filter: 'brightness(1)' }], { duration: 820 }));
+    }
+    // jump straight to a page from the thumbnails
+    function goTo(i) {
+      const to = Math.max(0, spreads().findIndex(sp => sp.includes(i)));
+      if (to === at || turning) return;  // already there
+      if (reduced()) { at = to; renderBook(); return; }
+      spreadEl.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 140 }).finished.then(() => { at = to; renderBook(); spreadEl.animate([{ opacity: 0, transform: 'scale(.985)' }, { opacity: 1, transform: 'none' }], { duration: 300, easing: 'cubic-bezier(.22,1,.36,1)' }); });
+    }
+    const thumbsEl = book.querySelector('.hl-fb-thumbs');
+    function toggleThumbs(force) {
+      const open = force ?? thumbsEl.hidden, btn = book.querySelector('[data-fb="thumbs"]');
+      thumbsEl.hidden = !open; btn.setAttribute('aria-expanded', open); book.classList.toggle('is-thumbs', open);
+      if (open) { book.querySelector('[data-fb-go][aria-current]')?.scrollIntoView({ block: 'nearest', inline: 'center' }); }
+    }
+    function openBook(from) {
+      bookFrom = from; pages = reportPages(); at = 0; turning = false;
+      thumbsEl.innerHTML = pages.map((pg, i) => `<button type="button" class="hl-fb-thumb" data-fb-go="${i}" aria-label="${i ? `Page ${i}` : 'Cover'}"><span class="hl-fb-mini${i === 0 ? ' is-cover' : ''}" aria-hidden="true"><span class="hl-fb-in">${pg.replace(/<(\/?)(?:button|a)\b[^>]*>/g, '<$1span>')}</span></span><span class="hl-fb-thumb-n">${i || 'Cover'}</span></button>`).join('');
+      paintIcons(thumbsEl); toggleThumbs(false); renderBook();
+      book.showModal();
+      if (!reduced()) {
+        book.animate([{ opacity: 0, transform: 'translateY(18px) scale(.97)' }, { opacity: 1, transform: 'none' }], { duration: 480, easing: 'cubic-bezier(.22,1,.36,1)' });
+        try { book.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 320, pseudoElement: '::backdrop' }); } catch { /* no ::backdrop animation */ }
+      }
+      book.querySelector('[data-fb="next"]').focus();
+    }
+    function closeBook() {
+      if (!book.open) return;
+      const done = () => { book.classList.remove('is-zoom'); if (document.fullscreenElement) document.exitFullscreen?.(); book.close(); if (bookFrom?.isConnected) bookFrom.focus(); };
+      if (reduced()) { done(); return; }
+      book.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(12px) scale(.98)' }], { duration: 220, easing: 'ease-in', fill: 'forwards' }).finished.then(() => { done(); book.getAnimations().forEach(a => a.cancel()); });
+    }
+    book.addEventListener('cancel', e => { e.preventDefault(); closeBook(); });
+    book.addEventListener('click', e => {
+      if (e.target === book) { closeBook(); return; }
+      const go = e.target.closest('[data-fb-go]'); if (go) { goTo(+go.dataset.fbGo); return; }
+      const b = e.target.closest('[data-fb]')?.dataset.fb;
+      if (b === 'radar' || b === 'contact') { const to = b; book.close(); book.getAnimations().forEach(a => a.cancel()); if (to === 'radar') setTab('tech-radar', { focus: true }); else scrollTo('contact'); return; }
+      if (b === 'close') closeBook(); else if (b === 'next') turn(1); else if (b === 'prev') turn(-1); else if (b === 'thumbs') toggleThumbs();
+      else if (b === 'first') goTo(0); else if (b === 'last') goTo(pages.length - 1); else if (b === 'toc') goTo(2);
+      else if (b === 'zoom') { const on = !book.classList.contains('is-zoom'); book.classList.toggle('is-zoom', on); const t = book.querySelector('[data-fb="zoom"]'); t.setAttribute('aria-pressed', on); t.setAttribute('aria-label', on ? 'Zoom out' : 'Zoom in'); t.innerHTML = ic(on ? 'zoom-out' : 'zoom-in'); paintIcons(t); }
+      else if (b === 'full') { if (document.fullscreenElement) document.exitFullscreen?.(); else book.requestFullscreen?.().catch(() => {}); }
+      else if (!b && e.target.closest('.hl-fb-spread') && Date.now() - swiped > 400) {
+        // tap a page to turn it: the right-hand side goes forward, the left-hand side goes back
+        const r = spreadEl.getBoundingClientRect(); turn(e.clientX > r.left + r.width / 2 ? 1 : -1);
+      }
+    });
+    spreadEl.addEventListener('pointerdown', e => { swipeX = e.pointerType === 'mouse' ? null : e.clientX; });
+    spreadEl.addEventListener('pointerup', e => { if (swipeX == null) return; const dx = e.clientX - swipeX; swipeX = null; if (Math.abs(dx) > 40) { swiped = Date.now(); turn(dx < 0 ? 1 : -1); } });
+    book.addEventListener('keydown', e => { if (e.key === 'ArrowRight') { e.preventDefault(); turn(1); } else if (e.key === 'ArrowLeft') { e.preventDefault(); turn(-1); } });
+    /* Print / PDF: every page on its own sheet, same design. Used to make the downloadable PDF. */
+    window.HubLanding.printReport = () => {
+      document.querySelector('.hl-fb-print')?.remove();
+      pages = reportPages();
+      const el = document.createElement('div'); el.className = 'hl-fb hl-fb-print';
+      el.innerHTML = pages.map((_, i) => `<section class="hl-fb-print-page is-${i % 2 ? 'odd' : 'even'}">${pageHtml(i)}</section>`).join('');
+      document.body.append(el); paintIcons(el); return el.querySelectorAll('img').length;
+    };
+    addEventListener('resize', () => { if (!book.open || turning) return;
+      if (spreadEl.classList.contains('is-wide') === wideBook()) return;
+      at = Math.max(0, spreads().findIndex(sp => sp.includes(shownFirst))); renderBook(); });
+
+    $$('[data-panel]').forEach(p => tabIO.observe(p));
+    if (tab !== 'discover') { const start = tab; tab = 'discover'; requestAnimationFrame(() => setTab(start, { instant: true })); }
     heroStars(page.querySelector('.hl-stars'), page);
     watchCounts();
     document.body.classList.add('lp-on', 'lp-reading');
