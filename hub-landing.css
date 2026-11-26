@@ -1692,3 +1692,4 @@ html:not([lang="ar"]) .hl-fb .hl-fb-in :is(.hl-fb-h, .hl-fb-cover h2, .hl-fb-cov
 .hl-page .hl-bar-end .hl-radar-cta svg { width: 15px; height: 15px; transition: transform .2s; }
 .hl-page .hl-bar-end .hl-radar-cta:hover svg { transform: translate(2px, -2px); }
 @media (max-width: 600px) { .hl-page .hl-bar-end .hl-radar-cta { height: 36px; padding: 0 12px; font-size: 13px; } }
+@media (max-width: 420px) { .hl-page .hl-bar-end .hl-radar-cta { padding: 0 10px; } .hl-page .hl-bar-end .hl-radar-cta svg { display: none; } .hl-page .hl-bar-end { gap: 8px; } }
