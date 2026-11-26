@@ -1684,3 +1684,11 @@ html:not([lang="ar"]) .hl-fb .hl-fb-in :is(.hl-fb-h, .hl-fb-cover h2, .hl-fb-cov
 .hl-fb-ts { display: inline-flex; align-items: center; gap: 1cqw; white-space: nowrap; font: 600 1.7cqw var(--mono); letter-spacing: .18cqw; text-transform: uppercase; color: #3b2a8c; }
 .hl-fb-ts::before { content: ''; width: 1.4cqw; height: 1.4cqw; border-radius: 50%; background: currentColor; }
 .hl-fb-trows li.is-pilot .hl-fb-ts { color: #c4007e; }
+
+/* Header: a pink button, top right, straight into the Tech Radar */
+.hl-page .hl-bar-end .hl-radar-cta { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px; font: 500 14px/1 var(--sans, 'Outfit', sans-serif); white-space: nowrap; cursor: pointer;
+  color: #fff !important; background: var(--page-primary-button, #de0090); border: 1px solid var(--page-primary-button, #de0090); border-radius: 0 !important; }
+.hl-page .hl-bar-end .hl-radar-cta:hover { background: #c4007e; border-color: #c4007e; }
+.hl-page .hl-bar-end .hl-radar-cta svg { width: 15px; height: 15px; transition: transform .2s; }
+.hl-page .hl-bar-end .hl-radar-cta:hover svg { transform: translate(2px, -2px); }
+@media (max-width: 600px) { .hl-page .hl-bar-end .hl-radar-cta { height: 36px; padding: 0 12px; font-size: 13px; } }

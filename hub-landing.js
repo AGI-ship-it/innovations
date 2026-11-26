@@ -679,6 +679,7 @@
               <button type="button" class="lang-option is-ar" lang="ar" aria-label="العربية" data-tooltip="العربية" aria-pressed="${window.ATLAS_LANG === 'ar'}" data-lang="ar">ع</button>
             </div>
             <div class="hl-view-wide" data-slot="view">${viewSwitch()}</div>
+            <button type="button" class="lp-primary hl-btn hl-radar-cta" data-act="hub-dissolve">Open Tech Radar ${ic('arrow-up-right')}</button>
             <button type="button" class="hl-square hl-menu-btn" aria-label="Open menu" data-tooltip="Menu" aria-expanded="false" aria-controls="hl-menu" data-act="menu">${ic('menu')}</button>
           </div>
         </div>

@@ -264,3 +264,4 @@ window.atlasAddDictionary?.({ 'Demo content': 'محتوى تجريبي', 'Chief 
 window.atlasAddDictionary?.({ 'Leadership': 'القيادة', 'Leads software engineering across Group Digital & Technology and guides the Hub’s work from discovery to handover.': 'يقود هندسة البرمجيات في الرقمنة والتكنولوجيا بالمجموعة ويوجّه عمل المركز من الاكتشاف حتى التسليم.' });
 window.atlasAddDictionary?.({ 'Amir Barsoum': 'أمير برسوم', 'SVP, Software Engineering': 'نائب أول للرئيس، هندسة البرمجيات' });
 window.atlasAddDictionary?.({ 'Placeholder': 'نص مؤقت' });
+window.atlasAddDictionary?.({ 'Open Tech Radar': 'افتح رادار التقنية' });
